@@ -55,6 +55,19 @@ let merge_qround_output ~a ~b ~c ~d ~initial_state ~(qround_output : Signal.t Qr
   state'
 ;;
 
+let do_qround_dbg ~a ~b ~c ~d input =
+  let slots = qround_inputs ~a ~b ~c ~d input in
+  let qround_output =
+    Qround.create { Qround.I.a = slots.a; b = slots.b; c = slots.c; d = slots.d }
+  in
+  merge_qround_output ~a ~b ~c ~d ~initial_state:input ~qround_output, qround_output
+;;
+
+let do_qround ~a ~b ~c ~d input =
+  let result, _ = do_qround_dbg ~a ~b ~c ~d input in
+  result
+;;
+
 module Test = struct
   (* Implementing the following IETF test:
 
@@ -94,13 +107,7 @@ module Test = struct
   end
 
   let create ({ state; _ } : _ I.t) =
-    let slots = qround_inputs ~a:2 ~b:7 ~c:8 ~d:13 state in
-    let qround_output =
-      Qround.create { Qround.I.a = slots.a; b = slots.b; c = slots.c; d = slots.d }
-    in
-    let state_out =
-      merge_qround_output ~a:2 ~b:7 ~c:8 ~d:13 ~initial_state:state ~qround_output
-    in
+    let state_out, qround_output = do_qround_dbg ~a:2 ~b:7 ~c:8 ~d:13 state in
     { O.state_out; qround_output }
   ;;
 

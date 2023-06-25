@@ -22,3 +22,5 @@ val merge_qround_output
   -> initial_state:Signal.t
   -> qround_output:Signal.t Qround.O.t
   -> Signal.t
+
+val do_qround : a:int -> b:int -> c:int -> d:int -> Signal.t -> Signal.t
