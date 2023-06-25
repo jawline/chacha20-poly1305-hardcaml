@@ -36,18 +36,14 @@ module O = struct
 end
 
 let create ({ input_state; _ } : _ I.t) =
-  let state' = input_state in
-  (* Column round *)
-  let state' = Qround_chacha_state.do_qround ~a:0 ~b:4 ~c:8 ~d:12 state' in
-  let state' = Qround_chacha_state.do_qround ~a:1 ~b:5 ~c:9 ~d:13 state' in
-  let state' = Qround_chacha_state.do_qround ~a:2 ~b:6 ~c:10 ~d:14 state' in
-  let state' = Qround_chacha_state.do_qround ~a:3 ~b:7 ~c:11 ~d:15 state' in
-  (* Diagonal round *)
-  let state' = Qround_chacha_state.do_qround ~a:0 ~b:5 ~c:10 ~d:15 state' in
-  let state' = Qround_chacha_state.do_qround ~a:1 ~b:6 ~c:11 ~d:12 state' in
-  let state' = Qround_chacha_state.do_qround ~a:2 ~b:7 ~c:8 ~d:13 state' in
-  let state' = Qround_chacha_state.do_qround ~a:3 ~b:4 ~c:9 ~d:14 state' in
-  { O.state_out = state' }
+  let column_output =
+    Chacha20_column_round.create { Chacha20_column_round.I.input_state }
+  in
+  let diagonal_output =
+    Chacha20_diagonal_round.create
+      { Chacha20_diagonal_round.I.input_state = column_output.state_out }
+  in
+  { O.state_out = diagonal_output.state_out }
 ;;
 
 module Test = struct
