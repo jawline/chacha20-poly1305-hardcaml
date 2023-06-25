@@ -8,9 +8,7 @@ open! Signal
 
 module I = struct
   type 'a t =
-    { clock : 'a [@bits 1]
-    ; clear : 'a [@bits 1]
-    ; a : 'a [@bits 32]
+    { a : 'a [@bits 32]
     ; b : 'a [@bits 32]
     ; c : 'a [@bits 32]
     ; d : 'a [@bits 32]

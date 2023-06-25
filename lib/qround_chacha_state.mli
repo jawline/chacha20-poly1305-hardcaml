@@ -14,7 +14,7 @@ end
 val select_word : Signal.t -> int -> Signal.t
 val qround_inputs : a:int -> b:int -> c:int -> d:int -> Signal.t -> Signal.t Assignment.t
 
-val qround_output
+val merge_qround_output
   :  a:int
   -> b:int
   -> c:int
