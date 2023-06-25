@@ -91,8 +91,7 @@ module Test = struct
     (* TODO: Generate inputs from a verified implementation to compare *)
     let a, b, c, d = test ~a:0x11111111 ~b:0x01020304 ~c:0x9b8d6f43 ~d:0x01234567 in
     printf "a: %x, b: %x, c: %x, d: %x\n" a b c d;
-    [%expect
-      {|
+    [%expect {|
       a: ea2a92f4, b: cb1cf8ce, c: 4581472e, d: 5881c4bb |}]
   ;;
 end
