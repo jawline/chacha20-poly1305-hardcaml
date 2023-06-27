@@ -140,6 +140,63 @@ module Test_informal = struct
 end
 
 module Test_from_ietf = struct
-  (*  TODO: Implement the test case at https://datatracker.ietf.org/doc/html/rfc7539#section-2.3.2 *)
+  let print_state bits =
+    Sequence.range 0 16
+    |> Sequence.iter ~f:(fun word ->
+         let word_bits = Bits.select bits ((word * 32) + 31) (word * 32) in
+         printf " %i: %x" word (Bits.to_int word_bits);
+         if (word + 1) % 4 = 0 then printf "\n";
+         ())
+  ;;
 
+  let cycle_and_print ~sim ~(inputs : _ I.t) ~(outputs : _ O.t) =
+    printf "Start of cycle\n";
+    printf "Input: \n";
+    print_state !(inputs.input_state);
+    Cyclesim.cycle sim;
+    printf "Output: \n";
+    print_state !(outputs.state_out)
+  ;;
+
+  let%expect_test "fixed test input" =
+    let module Simulator = Cyclesim.With_interface (I) (O) in
+    let sim = Simulator.create create in
+    let inputs : _ I.t = Cyclesim.inputs sim in
+    let outputs : _ O.t = Cyclesim.outputs sim in
+    let input_state =
+      let example_key =
+        let w1 = [ 0x0; 0x01; 0x02; 0x03 ] in
+        let w2 = [ 0x04; 0x05; 0x06; 0x07 ] in
+        let w3 = [ 0x08; 0x09; 0x0a; 0x0b ] in
+        let w4 = [ 0x0c; 0x0d; 0x0e; 0x0f ] in
+        let w5 = [ 0x10; 0x11; 0x12; 0x13 ] in
+        let w6 = [ 0x14; 0x15; 0x16; 0x17 ] in
+        let w7 = [ 0x18; 0x19; 0x1a; 0x1b ] in
+        let w8 = [ 0x1c; 0x1d; 0x1e; 0x1f ] in
+        w1 @ w2 @ w3 @ w4 @ w5 @ w6 @ w7 @ w8 |> List.map ~f:Char.of_int_exn
+      in
+      let example_nonce =
+        [ 00; 0x00; 0x00; 0x09; 0x00; 0x00; 0x00; 0x4a; 0x00; 0x00; 0x00; 0x00 ]
+        |> List.map ~f:Char.of_int_exn
+      in
+      Util.create_state ~key:example_key ~nonce:example_nonce
+      |> List.map ~f:Bits.of_char
+      |> Bits.concat_lsb
+    in
+    inputs.input_state := input_state;
+    cycle_and_print ~sim ~inputs ~outputs;
+    [%expect
+      {|
+      Start of cycle
+      Input:
+       0: 61707865 1: 3320646e 2: 79622d32 3: 6b206574
+       4: 3020100 5: 7060504 6: b0a0908 7: f0e0d0c
+       8: 13121110 9: 17161514 10: 1b1a1918 11: 1f1e1d1c
+       12: 1 13: 9000000 14: 4a000000 15: 0
+      Output:
+       0: 837778ab 1: e238d763 2: a67ae21e 3: 5950bb2f
+       4: c4f2d0c7 5: fc62bb2f 6: 8fa018fc 7: 3f5ec7b7
+       8: 335271c2 9: f29489f3 10: eabda8fc 11: 82e46ebd
+       12: d19c12b4 13: b04e16de 14: 9e83d0cb 15: 4e3c50a2 |}]
+  ;;
 end
