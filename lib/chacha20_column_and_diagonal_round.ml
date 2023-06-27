@@ -32,7 +32,7 @@ module I = struct
 end
 
 module O = struct
-  type 'a t = { state_out : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { output_state : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
 let create ({ input_state; _ } : _ I.t) =
@@ -41,9 +41,9 @@ let create ({ input_state; _ } : _ I.t) =
   in
   let diagonal_output =
     Chacha20_diagonal_round.create
-      { Chacha20_diagonal_round.I.input_state = column_output.state_out }
+      { Chacha20_diagonal_round.I.input_state = column_output.output_state }
   in
-  { O.state_out = diagonal_output.state_out }
+  { O.output_state = diagonal_output.output_state }
 ;;
 
 module Test = struct
@@ -56,7 +56,7 @@ module Test = struct
     Sequence.range 0 16
     |> Sequence.iter ~f:(fun word ->
          let word_bits =
-           Bits.select !(outputs.state_out) ((word * 32) + 31) (word * 32)
+           Bits.select !(outputs.output_state) ((word * 32) + 31) (word * 32)
          in
          printf "%i: %x\n" word (Bits.to_int word_bits))
   ;;
@@ -109,7 +109,7 @@ module Test = struct
       13: cd88cc68
       14: eb19d17f
       15: 9931f9d0 |}];
-    inputs.input_state := !(outputs.state_out);
+    inputs.input_state := !(outputs.output_state);
     cycle_and_print ~sim ~outputs;
     [%expect
       {|
@@ -130,7 +130,7 @@ module Test = struct
       13: 675d3f10
       14: 46fc4d77
       15: caa42c38 |}];
-    inputs.input_state := !(outputs.state_out);
+    inputs.input_state := !(outputs.output_state);
     cycle_and_print ~sim ~outputs;
     [%expect
       {|

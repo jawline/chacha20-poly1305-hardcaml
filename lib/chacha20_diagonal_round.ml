@@ -7,7 +7,7 @@ module I = struct
 end
 
 module O = struct
-  type 'a t = { state_out : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { output_state : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
 let create ({ input_state; _ } : _ I.t) =
@@ -16,7 +16,7 @@ let create ({ input_state; _ } : _ I.t) =
   let state' = Qround_chacha_state.do_qround ~a:1 ~b:6 ~c:11 ~d:12 state' in
   let state' = Qround_chacha_state.do_qround ~a:2 ~b:7 ~c:8 ~d:13 state' in
   let state' = Qround_chacha_state.do_qround ~a:3 ~b:4 ~c:9 ~d:14 state' in
-  { O.state_out = state' }
+  { O.output_state = state' }
 ;;
 
 (* Note: Tested in the column and diagonal round ml *)
