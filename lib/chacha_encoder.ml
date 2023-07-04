@@ -115,15 +115,7 @@ let%test_module "Basic tests" =
       inputs.encode := Bits.of_int ~width:1 0;
       inputs.input_state := input_state;
       cycle_and_print ~sim ~inputs ~outputs;
-      printf "Doing a single encode with the state we just set\n";
-      inputs.set_state := Bits.of_int ~width:1 0;
-      inputs.encode := Bits.of_int ~width:1 1;
-      (* 1 2 3 4 5 ... as each word in the ciphertext. *)
-      inputs.encode_data
-        := List.init ~f:(fun i -> Char.of_int_exn i |> Bits.of_char) 64 |> Bits.concat_lsb;
-      cycle_and_print ~sim ~inputs ~outputs;
-      [%expect
-        {|
+      [%expect {|
         ("Signal.width state_counter" 32)
         Setting the initial state
         Start of cycle
@@ -141,7 +133,15 @@ let%test_module "Basic tests" =
          0: 61707865 1: 3320646e 2: 79622d32 3: 6b206574
          4: 3020100 5: 7060504 6: b0a0908 7: f0e0d0c
          8: 13121110 9: 17161514 10: 1b1a1918 11: 1f1e1d1c
-         12: 1 13: 9000000 14: 4a000000 15: 0
+         12: 1 13: 9000000 14: 4a000000 15: 0 |}];
+      printf "Doing a single encode with the state we just set\n";
+      inputs.set_state := Bits.of_int ~width:1 0;
+      inputs.encode := Bits.of_int ~width:1 1;
+      (* 1 2 3 4 5 ... as each word in the ciphertext. *)
+      inputs.encode_data
+        := List.init ~f:(fun i -> Char.of_int_exn i |> Bits.of_char) 64 |> Bits.concat_lsb;
+      cycle_and_print ~sim ~inputs ~outputs;
+      [%expect {|
         Doing a single encode with the state we just set
         Start of cycle
         Input:
@@ -158,7 +158,28 @@ let%test_module "Basic tests" =
          0: 61707865 1: 3320646e 2: 79622d32 3: 6b206574
          4: 3020100 5: 7060504 6: b0a0908 7: f0e0d0c
          8: 13121110 9: 17161514 10: 1b1a1918 11: 1f1e1d1c
-         12: 2 13: 9000000 14: 4a000000 15: 0 |}]
+         12: 2 13: 9000000 14: 4a000000 15: 0 |}];
+      printf "Processing the same ciphertext again and observing that we get entirely different output because it is XOR'd with a new state\n";
+      cycle_and_print ~sim ~inputs ~outputs;
+      [%expect
+        {|
+        Processing the same ciphertext again and observing that we get entirely different output because it is XOR'd with a new state
+        Start of cycle
+        Input:
+         0: 61707865 1: 3320646e 2: 79622d32 3: 6b206574
+         4: 3020100 5: 7060504 6: b0a0908 7: f0e0d0c
+         8: 13121110 9: 17161514 10: 1b1a1918 11: 1f1e1d1c
+         12: 1 13: 9000000 14: 4a000000 15: 0
+        Output (Real Output):
+         0: c8bfbedc 1: 8163bb87 2: 5c8dc26 3: 2b4d57a2
+         4: c9807b0d 5: 28cdf79 6: 8c48fb73 7: 73901e9
+         8: b03ca7aa 9: 35cd1fe8 10: a0735fb2 11: 6a09e080
+         12: 28a6f70a 13: 66287b7f 14: d2c4906b 15: 319e2661
+        Output (Input State For Debugging):
+         0: 61707865 1: 3320646e 2: 79622d32 3: 6b206574
+         4: 3020100 5: 7060504 6: b0a0908 7: f0e0d0c
+         8: 13121110 9: 17161514 10: 1b1a1918 11: 1f1e1d1c
+         12: 3 13: 9000000 14: 4a000000 15: 0 |}]
     ;;
   end)
 ;;
