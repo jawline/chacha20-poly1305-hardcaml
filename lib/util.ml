@@ -1,4 +1,5 @@
 open Core
+open Hardcaml
 
 let byte_string_of_int value =
   let open Int in
@@ -45,9 +46,21 @@ let line_to_escaped_string (str : string) =
   String.to_list str
   |> List.map ~f:(fun (item : char) ->
        let is_newline = Char.(item = '\n') in
+       let is_return = Char.(item = '\r') in
        let is_printable = Char.to_int item >= 32 && Char.to_int item <= 126 in
-       if is_newline then "\n" else if is_printable then Char.to_string item else ".")
+       if is_newline then "\\n" else if is_return then "\\r" else if is_printable then Char.to_string item else ".")
   |> String.concat
+;;
+
+let bytestring_of_bits (bits : Bits.t) =
+  if Bits.width bits % 8 <> 0
+  then raise_s [%message "bytestring_of_bits must be a multiple of 8"];
+  String.init
+    ~f:(fun i ->
+      let lo = i * 8 in
+      let hi = lo + 7 in
+      Bits.select bits hi lo |> Bits.to_int |> Char.of_int_exn)
+    (Bits.width bits / 8)
 ;;
 
 let hexdump byte_string =
