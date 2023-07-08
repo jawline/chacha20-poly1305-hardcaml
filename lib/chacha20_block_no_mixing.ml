@@ -167,25 +167,7 @@ module Test_from_ietf = struct
     let sim = Simulator.create create in
     let inputs : _ I.t = Cyclesim.inputs sim in
     let outputs : _ O.t = Cyclesim.outputs sim in
-    let input_state =
-      let example_key =
-        let w1 = [ 0x0; 0x01; 0x02; 0x03 ] in
-        let w2 = [ 0x04; 0x05; 0x06; 0x07 ] in
-        let w3 = [ 0x08; 0x09; 0x0a; 0x0b ] in
-        let w4 = [ 0x0c; 0x0d; 0x0e; 0x0f ] in
-        let w5 = [ 0x10; 0x11; 0x12; 0x13 ] in
-        let w6 = [ 0x14; 0x15; 0x16; 0x17 ] in
-        let w7 = [ 0x18; 0x19; 0x1a; 0x1b ] in
-        let w8 = [ 0x1c; 0x1d; 0x1e; 0x1f ] in
-        w1 @ w2 @ w3 @ w4 @ w5 @ w6 @ w7 @ w8 |> List.map ~f:Char.of_int_exn
-      in
-      let example_nonce =
-        [ 00; 0x00; 0x00; 0x09; 0x00; 0x00; 0x00; 0x4a; 0x00; 0x00; 0x00; 0x00 ]
-        |> List.map ~f:Char.of_int_exn
-      in
-      Util.create_state ~key:example_key ~nonce:example_nonce
-      |> List.map ~f:Bits.of_char
-      |> Bits.concat_lsb
+    let input_state = Util.ietf_example_initial_state
     in
     inputs.input_state := input_state;
     cycle_and_print ~sim ~inputs ~outputs;

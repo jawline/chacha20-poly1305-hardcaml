@@ -6,3 +6,5 @@ val create_state : key:char list -> nonce:char list -> char list
 
 val bytestring_of_bits : Bits.t -> string
 val hexdump : string -> unit
+
+val ietf_example_initial_state : Bits.t
