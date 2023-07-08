@@ -25,3 +25,64 @@ let create_state ~key ~nonce =
   let counter_prelude = byte_string_of_int 0x1 in
   constant_prelude @ key @ counter_prelude @ nonce
 ;;
+
+let pad_to ~desired_strlen unpadded_string =
+  if String.length unpadded_string < desired_strlen
+  then (
+    let missing_chars = desired_strlen - String.length unpadded_string in
+    String.concat [ unpadded_string; String.init missing_chars ~f:(fun _ -> ' ') ])
+  else unpadded_string
+;;
+
+let line_to_hex ~line_width (str : string) =
+  String.to_list str
+  |> List.map ~f:(fun item -> Char.to_int item |> sprintf "%02x")
+  |> String.concat ~sep:" "
+  |> pad_to ~desired_strlen:((line_width * 3) - 1)
+;;
+
+let line_to_escaped_string (str : string) =
+  String.to_list str
+  |> List.map ~f:(fun (item : char) ->
+       let is_newline = Char.(item = '\n') in
+       let is_printable = Char.to_int item >= 32 && Char.to_int item <= 126 in
+       if is_newline then "\n" else if is_printable then Char.to_string item else ".")
+  |> String.concat
+;;
+
+let hexdump byte_string =
+  let len = String.length byte_string in
+  let line_width = 16 in
+  let rec split_to_lines i =
+    let start_idx = i * line_width in
+    let end_idx = (i * line_width) + line_width in
+    if start_idx <= len
+    then (
+      let line_len = if end_idx >= len then len - (i * line_width) else line_width in
+      let line = String.sub ~pos:(i * line_width) ~len:line_len byte_string in
+      line :: split_to_lines (i + 1))
+    else []
+  in
+  let lines = split_to_lines 0 in
+  List.iteri
+    ~f:(fun index line ->
+      printf
+        "%03i: %s | %s\n"
+        (index + 1)
+        (line_to_hex ~line_width line)
+        (line_to_escaped_string line))
+    lines;
+  ()
+;;
+
+let%expect_test "hexdump test" =
+  hexdump
+    "Hello world. This is a really long\x05\x04\x06byte string. Let's see it get split";
+  [%expect
+    {|
+    001: 48 65 6c 6c 6f 20 77 6f 72 6c 64 2e 20 54 68 69 | Hello world. Thi
+    002: 73 20 69 73 20 61 20 72 65 61 6c 6c 79 20 6c 6f | s is a really lo
+    003: 6e 67 05 04 06 62 79 74 65 20 73 74 72 69 6e 67 | ng...byte string
+    004: 2e 20 4c 65 74 27 73 20 73 65 65 20 69 74 20 67 | . Let's see it g
+    005: 65 74 20 73 70 6c 69 74                         | et split |}]
+;;
