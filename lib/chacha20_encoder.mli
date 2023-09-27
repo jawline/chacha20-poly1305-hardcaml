@@ -14,8 +14,7 @@ end
 
 module O : sig
   type 'a t =
-    { input_state_for_debugging : 'a [@bits 512]
-    ; output_state : 'a [@bits 512]
+    { output : 'a [@bits 512]
     }
   [@@deriving sexp_of, hardcaml]
 end
