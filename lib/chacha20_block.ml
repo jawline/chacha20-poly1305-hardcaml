@@ -27,22 +27,15 @@ module Test_from_ietf = struct
   (* Implements the test vector described in
      https://datatracker.ietf.org/doc/html/rfc7539#section-2.3.1 and prints the
      correct output after mixing the old state with the new. *)
-  let print_state bits =
-    Sequence.range 0 16
-    |> Sequence.iter ~f:(fun word ->
-         let word_bits = Bits.select bits ((word * 32) + 31) (word * 32) in
-         printf " %i: %x" word (Bits.to_int word_bits);
-         if (word + 1) % 4 = 0 then printf "\n";
-         ())
-  ;;
 
   let cycle_and_print ~sim ~(inputs : _ I.t) ~(outputs : _ O.t) =
     printf "Start of cycle\n";
     printf "Input: \n";
-    print_state !(inputs.input_state);
+    Util.print_state !(inputs.input_state);
     Cyclesim.cycle sim;
     printf "Output: \n";
-    print_state !(outputs.output_state)
+    Util.print_state !(outputs.output_state);
+    Util.bytestring_of_bits !(outputs.output_state) |> Util.hexdump
   ;;
 
   let%expect_test "fixed test input" =
@@ -50,22 +43,29 @@ module Test_from_ietf = struct
     let sim = Simulator.create create in
     let inputs : _ I.t = Cyclesim.inputs sim in
     let outputs : _ O.t = Cyclesim.outputs sim in
-    let input_state = Util.ietf_example_initial_state
+    let input_state =
+      Util.ietf_example_initial_state ~counter:1 ~nonce:Util.block_test_nonce
     in
     inputs.input_state := input_state;
     cycle_and_print ~sim ~inputs ~outputs;
+    (* This test gives the same output as the example serialized block. *)
     [%expect
       {|
       Start of cycle
       Input:
-       0: 61707865 1: 3320646e 2: 79622d32 3: 6b206574
-       4: 3020100 5: 7060504 6: b0a0908 7: f0e0d0c
-       8: 13121110 9: 17161514 10: 1b1a1918 11: 1f1e1d1c
-       12: 1 13: 9000000 14: 4a000000 15: 0
+       00: 61707865 01: 3320646e 02: 79622d32 03: 6b206574
+       04: 03020100 05: 07060504 06: 0b0a0908 07: 0f0e0d0c
+       08: 13121110 09: 17161514 10: 1b1a1918 11: 1f1e1d1c
+       12: 00000001 13: 09000000 14: 4a000000 15: 00000000
       Output:
-       0: e4e7f110 1: 15593bd1 2: 1fdd0f50 3: c47120a3
-       4: c7f4d1c7 5: 368c033 6: 9aaa2204 7: 4e6cd4c3
-       8: 466482d2 9: 9aa9f07 10: 5d7c214 11: a2028bd9
-       12: d19c12b5 13: b94e16de 14: e883d0cb 15: 4e3c50a2 |}]
+       00: e4e7f110 01: 15593bd1 02: 1fdd0f50 03: c47120a3
+       04: c7f4d1c7 05: 0368c033 06: 9aaa2204 07: 4e6cd4c3
+       08: 466482d2 09: 09aa9f07 10: 05d7c214 11: a2028bd9
+       12: d19c12b5 13: b94e16de 14: e883d0cb 15: 4e3c50a2
+      001: 10 f1 e7 e4 d1 3b 59 15 50 0f dd 1f a3 20 71 c4 | .....;Y.P.... q.
+      002: c7 d1 f4 c7 33 c0 68 03 04 22 aa 9a c3 d4 6c 4e | ....3.h.."....lN
+      003: d2 82 64 46 07 9f aa 09 14 c2 d7 05 d9 8b 02 a2 | ..dF............
+      004: b5 12 9c d1 de 16 4e b9 cb d0 83 e8 a2 50 3c 4e | ......N......P<N
+      005:                                                 | |}]
   ;;
 end

@@ -7,9 +7,7 @@ module I : sig
     { clock : 'a [@bits 1]
     ; clear : 'a [@bits 1]
     ; set_state : 'a [@bits 1]
-    ; input_state : 'a [@bits 512]
-    ; encode : 'a [@bits 1]
-    ; encode_data : 'a [@bits 512]
+    ; input : 'a [@bits 512]
     }
   [@@deriving sexp_of, hardcaml]
 end

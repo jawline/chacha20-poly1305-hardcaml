@@ -71,28 +71,28 @@ let do_qround ~a ~b ~c ~d input =
 module Test = struct
   (* Implementing the following IETF test:
 
-           For a test vector, we will use a ChaCha state that was generated
-           randomly:
+     For a test vector, we will use a ChaCha state that was generated
+     randomly:
 
-           Sample ChaCha State
+     Sample ChaCha State
 
-               879531e0  c5ecf37d  516461b1  c9a62f8a
-               44c20ef3  3390af7f  d9fc690b  2a5f714c
-               53372767  b00a5631  974c541a  359e9963
-               5c971061  3d631689  2098d9d6  91dbd320
+     879531e0  c5ecf37d  516461b1  c9a62f8a
+     44c20ef3  3390af7f  d9fc690b  2a5f714c
+     53372767  b00a5631  974c541a  359e9963
+     5c971061  3d631689  2098d9d6  91dbd320
 
-           We will apply the QUARTERROUND(2,7,8,13) operation to this state.
-           For obvious reasons, this one is part of what is called a "diagonal
-           round":
+     We will apply the QUARTERROUND(2,7,8,13) operation to this state.
+     For obvious reasons, this one is part of what is called a "diagonal
+     round":
 
-           After applying QUARTERROUND(2,7,8,13)
+     After applying QUARTERROUND(2,7,8,13)
 
-               879531e0  c5ecf37d *bdb886dc  c9a62f8a
-               44c20ef3  3390af7f  d9fc690b *cfacafd2
-              *e46bea80  b00a5631  974c541a  359e9963
-               5c971061 *ccc07c79  2098d9d6  91dbd320
+     879531e0  c5ecf37d *bdb886dc  c9a62f8a
+     44c20ef3  3390af7f  d9fc690b *cfacafd2
+     *e46bea80  b00a5631  974c541a  359e9963
+     5c971061 *ccc07c79  2098d9d6  91dbd320
 
-           Note that only the numbers in positions 2, 7, 8, and 13 changed. *)
+     Note that only the numbers in positions 2, 7, 8, and 13 changed. *)
 
   module I = struct
     type 'a t = { state : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
@@ -142,10 +142,8 @@ module Test = struct
     Cyclesim.cycle sim;
     Sequence.range 0 16
     |> Sequence.iter ~f:(fun word ->
-         let word_bits =
-           Bits.select !(outputs.state_out) ((word * 32) + 31) (word * 32)
-         in
-         printf "%i: %x\n" word (Bits.to_int word_bits));
+      let word_bits = Bits.select !(outputs.state_out) ((word * 32) + 31) (word * 32) in
+      printf "%i: %x\n" word (Bits.to_int word_bits));
     printf
       "Qround output: %x %x %x %x\n"
       (Bits.to_int !(outputs.qround_output.a_out))

@@ -3,8 +3,7 @@ open! Hardcaml
 open! Signal
 
 (** An implementation of the qround function as described in pseudocode in the
-    IETF specification: https://datatracker.ietf.org/doc/html/rfc7539#section-2
-    *)
+    IETF specification: https://datatracker.ietf.org/doc/html/rfc7539#section-2 *)
 
 module I = struct
   type 'a t =

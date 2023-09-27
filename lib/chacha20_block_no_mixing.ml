@@ -22,28 +22,28 @@ let create ({ input_state; _ } : _ I.t) =
   let output_state =
     Sequence.range 0 10
     |> Sequence.fold ~init:input_state ~f:(fun acc _i ->
-         let next_round_output =
-           Chacha20_column_and_diagonal_round.create
-             { Chacha20_column_and_diagonal_round.I.input_state = acc }
-         in
-         next_round_output.output_state)
+      let next_round_output =
+        Chacha20_column_and_diagonal_round.create
+          { Chacha20_column_and_diagonal_round.I.input_state = acc }
+      in
+      next_round_output.output_state)
   in
   { O.output_state }
 ;;
 
 module Test_informal = struct
   (* This test is just testing that the function simulates without error and is
-    not implementing a test from the IETF standard. *)
+     not implementing a test from the IETF standard. *)
 
   let cycle_and_print ~sim ~(outputs : _ O.t) =
     printf "Start of cycle\n";
     Cyclesim.cycle sim;
     Sequence.range 0 16
     |> Sequence.iter ~f:(fun word ->
-         let word_bits =
-           Bits.select !(outputs.output_state) ((word * 32) + 31) (word * 32)
-         in
-         printf "%i: %x\n" word (Bits.to_int word_bits))
+      let word_bits =
+        Bits.select !(outputs.output_state) ((word * 32) + 31) (word * 32)
+      in
+      printf "%i: %x\n" word (Bits.to_int word_bits))
   ;;
 
   let%expect_test "fixed test input" =
@@ -144,22 +144,13 @@ module Test_from_ietf = struct
      https://datatracker.ietf.org/doc/html/rfc7539#section-2.3.1 and prints the
      correct output before mixing the old with new. *)
 
-  let print_state bits =
-    Sequence.range 0 16
-    |> Sequence.iter ~f:(fun word ->
-         let word_bits = Bits.select bits ((word * 32) + 31) (word * 32) in
-         printf " %i: %x" word (Bits.to_int word_bits);
-         if (word + 1) % 4 = 0 then printf "\n";
-         ())
-  ;;
-
   let cycle_and_print ~sim ~(inputs : _ I.t) ~(outputs : _ O.t) =
     printf "Start of cycle\n";
     printf "Input: \n";
-    print_state !(inputs.input_state);
+    Util.print_state !(inputs.input_state);
     Cyclesim.cycle sim;
     printf "Output: \n";
-    print_state !(outputs.output_state)
+    Util.print_state !(outputs.output_state)
   ;;
 
   let%expect_test "fixed test input" =
@@ -167,7 +158,8 @@ module Test_from_ietf = struct
     let sim = Simulator.create create in
     let inputs : _ I.t = Cyclesim.inputs sim in
     let outputs : _ O.t = Cyclesim.outputs sim in
-    let input_state = Util.ietf_example_initial_state
+    let input_state =
+      Util.ietf_example_initial_state ~nonce:Util.block_test_nonce ~counter:1
     in
     inputs.input_state := input_state;
     cycle_and_print ~sim ~inputs ~outputs;
@@ -175,14 +167,14 @@ module Test_from_ietf = struct
       {|
       Start of cycle
       Input:
-       0: 61707865 1: 3320646e 2: 79622d32 3: 6b206574
-       4: 3020100 5: 7060504 6: b0a0908 7: f0e0d0c
-       8: 13121110 9: 17161514 10: 1b1a1918 11: 1f1e1d1c
-       12: 1 13: 9000000 14: 4a000000 15: 0
+       00: 61707865 01: 3320646e 02: 79622d32 03: 6b206574
+       04: 03020100 05: 07060504 06: 0b0a0908 07: 0f0e0d0c
+       08: 13121110 09: 17161514 10: 1b1a1918 11: 1f1e1d1c
+       12: 00000001 13: 09000000 14: 4a000000 15: 00000000
       Output:
-       0: 837778ab 1: e238d763 2: a67ae21e 3: 5950bb2f
-       4: c4f2d0c7 5: fc62bb2f 6: 8fa018fc 7: 3f5ec7b7
-       8: 335271c2 9: f29489f3 10: eabda8fc 11: 82e46ebd
+       00: 837778ab 01: e238d763 02: a67ae21e 03: 5950bb2f
+       04: c4f2d0c7 05: fc62bb2f 06: 8fa018fc 07: 3f5ec7b7
+       08: 335271c2 09: f29489f3 10: eabda8fc 11: 82e46ebd
        12: d19c12b4 13: b04e16de 14: 9e83d0cb 15: 4e3c50a2 |}]
   ;;
 end

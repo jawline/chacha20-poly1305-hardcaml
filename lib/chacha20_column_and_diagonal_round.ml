@@ -4,28 +4,28 @@ open! Signal
 
 (** An implementation of a single column and a single diagonal round of the Chacha20 block function as described in
     https://datatracker.ietf.org/doc/html/rfc7539#section-2.3.
-    
+
     ChaCha20 runs 20 rounds, alternating between "column rounds" and
-   "diagonal rounds".  Each round consists of four quarter-rounds, and
-   they are run as follows.  Quarter rounds 1-4 are part of a "column"
-   round, while 5-8 are part of a "diagonal" round:
+    "diagonal rounds".  Each round consists of four quarter-rounds, and
+    they are run as follows.  Quarter rounds 1-4 are part of a "column"
+    round, while 5-8 are part of a "diagonal" round:
 
-   1.  QUARTERROUND ( 0, 4, 8,12)
-   2.  QUARTERROUND ( 1, 5, 9,13)
-   3.  QUARTERROUND ( 2, 6,10,14)
-   4.  QUARTERROUND ( 3, 7,11,15)
-   5.  QUARTERROUND ( 0, 5,10,15)
-   6.  QUARTERROUND ( 1, 6,11,12)
-   7.  QUARTERROUND ( 2, 7, 8,13)
-   8.  QUARTERROUND ( 3, 4, 9,14)
+    1.  QUARTERROUND ( 0, 4, 8,12)
+    2.  QUARTERROUND ( 1, 5, 9,13)
+    3.  QUARTERROUND ( 2, 6,10,14)
+    4.  QUARTERROUND ( 3, 7,11,15)
+    5.  QUARTERROUND ( 0, 5,10,15)
+    6.  QUARTERROUND ( 1, 6,11,12)
+    7.  QUARTERROUND ( 2, 7, 8,13)
+    8.  QUARTERROUND ( 3, 4, 9,14)
 
-   At the end of 20 rounds (or 10 iterations of the above list), we add
-   the original input words to the output words, and serialize the
-   result by sequencing the words one-by-one in little-endian order.
+    At the end of 20 rounds (or 10 iterations of the above list), we add
+    the original input words to the output words, and serialize the
+    result by sequencing the words one-by-one in little-endian order.
 
-   Note: "addition" in the above paragraph is done modulo 2^32.  In some
-   machine languages, this is called carryless addition on a 32-bit
-   word. *)
+    Note: "addition" in the above paragraph is done modulo 2^32.  In some
+    machine languages, this is called carryless addition on a 32-bit
+    word. *)
 
 module I = struct
   type 'a t = { input_state : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
@@ -48,17 +48,17 @@ let create ({ input_state; _ } : _ I.t) =
 
 module Test = struct
   (* This test is just testing that the function simulates without error and is
-    not implementing a test from the IETF standard. *)
+     not implementing a test from the IETF standard. *)
 
   let cycle_and_print ~sim ~(outputs : _ O.t) =
     printf "Start of cycle\n";
     Cyclesim.cycle sim;
     Sequence.range 0 16
     |> Sequence.iter ~f:(fun word ->
-         let word_bits =
-           Bits.select !(outputs.output_state) ((word * 32) + 31) (word * 32)
-         in
-         printf "%i: %x\n" word (Bits.to_int word_bits))
+      let word_bits =
+        Bits.select !(outputs.output_state) ((word * 32) + 31) (word * 32)
+      in
+      printf "%i: %x\n" word (Bits.to_int word_bits))
   ;;
 
   let%expect_test "fixed test input" =

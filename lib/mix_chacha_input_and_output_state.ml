@@ -19,13 +19,13 @@ end
 
 let create ({ input_state; output_state } : _ I.t) =
   (* Iterate over each word and sum them (matrix addition). Do not just
-           add the signals as the carries would overflow into the next word. *)
+     add the signals as the carries would overflow into the next word. *)
   let new_state =
     Sequence.range 0 16
     |> Sequence.map ~f:(fun index ->
-         let lo_bit = index * 32 in
-         let hi_bit = lo_bit + 31 in
-         select input_state hi_bit lo_bit +: select output_state hi_bit lo_bit)
+      let lo_bit = index * 32 in
+      let hi_bit = lo_bit + 31 in
+      select input_state hi_bit lo_bit +: select output_state hi_bit lo_bit)
     |> Sequence.to_list
     |> concat_lsb
   in
@@ -33,24 +33,15 @@ let create ({ input_state; output_state } : _ I.t) =
 ;;
 
 module Test_simple_matrix_addition = struct
-  let print_state bits =
-    Sequence.range 0 16
-    |> Sequence.iter ~f:(fun word ->
-         let word_bits = Bits.select bits ((word * 32) + 31) (word * 32) in
-         printf " %i: %x" word (Bits.to_int word_bits);
-         if (word + 1) % 4 = 0 then printf "\n";
-         ())
-  ;;
-
   let cycle_and_print ~sim ~(inputs : _ I.t) ~(outputs : _ O.t) =
     printf "Start of cycle\n";
     printf "Input: \n";
-    print_state !(inputs.input_state);
+    Util.print_state !(inputs.input_state);
     printf "Output: \n";
-    print_state !(inputs.output_state);
+    Util.print_state !(inputs.output_state);
     Cyclesim.cycle sim;
     printf "Mixed state: \n";
-    print_state !(outputs.new_state)
+    Util.print_state !(outputs.new_state)
   ;;
 
   let%expect_test "fixed test input" =
@@ -77,19 +68,19 @@ module Test_simple_matrix_addition = struct
       {|
       Start of cycle
       Input:
-       0: 0 1: 1 2: 2 3: 3
-       4: 4 5: 5 6: 6 7: 7
-       8: 8 9: 9 10: a 11: b
-       12: c 13: d 14: e 15: f
+       00: 00000000 01: 00000001 02: 00000002 03: 00000003
+       04: 00000004 05: 00000005 06: 00000006 07: 00000007
+       08: 00000008 09: 00000009 10: 0000000a 11: 0000000b
+       12: 0000000c 13: 0000000d 14: 0000000e 15: 0000000f
       Output:
-       0: 0 1: 1 2: 2 3: 3
-       4: 4 5: 5 6: 6 7: 7
-       8: 8 9: 9 10: a 11: b
-       12: c 13: d 14: e 15: f
+       00: 00000000 01: 00000001 02: 00000002 03: 00000003
+       04: 00000004 05: 00000005 06: 00000006 07: 00000007
+       08: 00000008 09: 00000009 10: 0000000a 11: 0000000b
+       12: 0000000c 13: 0000000d 14: 0000000e 15: 0000000f
       Mixed state:
-       0: 0 1: 2 2: 4 3: 6
-       4: 8 5: a 6: c 7: e
-       8: 10 9: 12 10: 14 11: 16
-       12: 18 13: 1a 14: 1c 15: 1e |}]
+       00: 00000000 01: 00000002 02: 00000004 03: 00000006
+       04: 00000008 05: 0000000a 06: 0000000c 07: 0000000e
+       08: 00000010 09: 00000012 10: 00000014 11: 00000016
+       12: 00000018 13: 0000001a 14: 0000001c 15: 0000001e |}]
   ;;
 end
