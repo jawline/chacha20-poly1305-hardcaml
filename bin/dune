@@ -1,0 +1,4 @@
+(executable
+ (public_name chacha_hardcaml)
+ (name main)
+ (libraries chacha_hardcaml))
