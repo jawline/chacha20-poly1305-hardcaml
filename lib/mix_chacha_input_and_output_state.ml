@@ -23,9 +23,8 @@ let create ({ input; unmixed_output } : _ I.t) =
   { O.output =
       Sequence.range 0 16
       |> Sequence.map ~f:(fun index ->
-        let lo_bit = index * 32 in
-        let hi_bit = lo_bit + 31 in
-        select input hi_bit lo_bit +: select unmixed_output hi_bit lo_bit)
+        let slot = Util.select_byte_range ~from:(index * 4) ~to_:((index + 1) * 4) in
+        slot input +: slot unmixed_output)
       |> Sequence.to_list
       |> concat_lsb
   }

@@ -10,3 +10,5 @@ val sunscreen_nonce : char list
 val block_test_nonce : char list
 val ietf_example_initial_state : nonce:char list -> counter:int -> Bits.t
 val print_state : Bits.t -> unit
+val select_byte_range : from:int -> to_:int -> Signal.t -> Signal.t
+val replace_byte_range : from:int -> to_:int -> with_:Signal.t -> Signal.t -> Signal.t

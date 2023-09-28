@@ -16,28 +16,22 @@ module O = struct
   type 'a t = { output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
-let replace ~hi ~lo ~with_ signal =
-  let before = select signal (lo - 1) 0 in
-  let after = select signal (Signal.width signal - 1) (hi + 1) in
-  concat_lsb [ before; with_; after ]
-;;
-
 let create ({ clock; clear; set_state; input } : Signal.t I.t) =
   let open Always in
   let open Variable in
   let r_sync = Reg_spec.create ~clock ~clear () in
   let current_state = reg ~enable:vdd ~width:512 r_sync in
-  let ctr_lo_bit = 32 * 12 in
-  let ctr_hi_bit = (32 * 13) - 1 in
-  let state_counter = select current_state.value ctr_hi_bit ctr_lo_bit in
+  let state_counter =
+    Util.select_byte_range current_state.value ~from:(4 * 12) ~to_:(4 * 13)
+  in
   let block_output =
     Chacha20_block.create { Chacha20_block.I.input = current_state.value }
   in
   let encode_logic =
     [ current_state
-      <-- replace
-            ~hi:ctr_hi_bit
-            ~lo:ctr_lo_bit
+      <-- Util.replace_byte_range
+            ~from:(4 * 12)
+            ~to_:(4 * 13)
             ~with_:(state_counter +:. 1)
             current_state.value
     ]

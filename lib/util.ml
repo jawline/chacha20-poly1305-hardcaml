@@ -141,3 +141,16 @@ let print_state bits =
     if (word + 1) % 4 = 0 then printf "\n";
     ())
 ;;
+
+let select_byte_range ~from ~to_ signal =
+  let from, to_ = from * 8, to_ * 8 in
+  Signal.select signal (to_ - 1) from
+;;
+
+let replace_byte_range ~from ~to_ ~with_ signal =
+  let open Signal in
+  let from, to_ = from * 8, to_ * 8 in
+  let before = select signal (from - 1) 0 in
+  let after = select signal (width signal - 1) to_ in
+  concat_lsb [ before; with_; after ]
+;;
