@@ -3,24 +3,22 @@ open! Hardcaml
 open! Signal
 
 module I = struct
-  type 'a t = { input_state : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { input : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
 module O = struct
-  type 'a t = { output_state : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
-let create ({ input_state } : _ I.t) =
-  let block_output =
-    Chacha20_block_no_mixing.create { Chacha20_block_no_mixing.I.input_state }
+let create ({ input } : _ I.t) =
+  let { Chacha20_block_no_mixing.O.output = unmixed_output } =
+    Chacha20_block_no_mixing.create { Chacha20_block_no_mixing.I.input }
   in
-  let mixed_output =
+  let { Mix_chacha_input_and_output_state.O.output } =
     Mix_chacha_input_and_output_state.create
-      { Mix_chacha_input_and_output_state.I.input_state
-      ; output_state = block_output.output_state
-      }
+      { Mix_chacha_input_and_output_state.I.input; unmixed_output }
   in
-  { O.output_state = mixed_output.new_state }
+  { O.output }
 ;;
 
 module Test_from_ietf = struct
@@ -31,10 +29,10 @@ module Test_from_ietf = struct
   let cycle_and_print ~sim ~(inputs : _ I.t) ~(outputs : _ O.t) =
     printf "Start of cycle\n";
     printf "Input: \n";
-    Util.print_state !(inputs.input_state);
+    Util.print_state !(inputs.input);
     Cyclesim.cycle sim;
     printf "Output: \n";
-    Util.bytestring_of_bits !(outputs.output_state) |> Util.hexdump
+    Util.bytestring_of_bits !(outputs.output) |> Util.hexdump
   ;;
 
   let%expect_test "fixed test input" =
@@ -42,10 +40,8 @@ module Test_from_ietf = struct
     let sim = Simulator.create create in
     let inputs : _ I.t = Cyclesim.inputs sim in
     let outputs : _ O.t = Cyclesim.outputs sim in
-    let input_state =
-      Util.ietf_example_initial_state ~counter:1 ~nonce:Util.block_test_nonce
-    in
-    inputs.input_state := input_state;
+    inputs.input
+    := Util.ietf_example_initial_state ~counter:1 ~nonce:Util.block_test_nonce;
     cycle_and_print ~sim ~inputs ~outputs;
     (* This test gives the same output as the example serialized block. *)
     [%expect

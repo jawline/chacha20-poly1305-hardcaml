@@ -28,22 +28,21 @@ open! Signal
     word. *)
 
 module I = struct
-  type 'a t = { input_state : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { input : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
 module O = struct
-  type 'a t = { output_state : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
-let create ({ input_state; _ } : _ I.t) =
-  let column_output =
-    Chacha20_column_round.create { Chacha20_column_round.I.input_state }
+let create ({ input; _ } : _ I.t) =
+  let { Chacha20_column_round.O.output = column_output } =
+    Chacha20_column_round.create { Chacha20_column_round.I.input }
   in
-  let diagonal_output =
-    Chacha20_diagonal_round.create
-      { Chacha20_diagonal_round.I.input_state = column_output.output_state }
+  let { Chacha20_diagonal_round.O.output } =
+    Chacha20_diagonal_round.create { Chacha20_diagonal_round.I.input = column_output }
   in
-  { O.output_state = diagonal_output.output_state }
+  { O.output }
 ;;
 
 module Test = struct
@@ -55,9 +54,7 @@ module Test = struct
     Cyclesim.cycle sim;
     Sequence.range 0 16
     |> Sequence.iter ~f:(fun word ->
-      let word_bits =
-        Bits.select !(outputs.output_state) ((word * 32) + 31) (word * 32)
-      in
+      let word_bits = Bits.select !(outputs.output) ((word * 32) + 31) (word * 32) in
       printf "%i: %x\n" word (Bits.to_int word_bits))
   ;;
 
@@ -88,7 +85,7 @@ module Test = struct
       |> List.map ~f:oi
       |> Bits.concat_lsb
     in
-    inputs.input_state := input_state;
+    inputs.input := input_state;
     cycle_and_print ~sim ~outputs;
     [%expect
       {|
@@ -109,7 +106,7 @@ module Test = struct
       13: cd88cc68
       14: eb19d17f
       15: 9931f9d0 |}];
-    inputs.input_state := !(outputs.output_state);
+    inputs.input := !(outputs.output);
     cycle_and_print ~sim ~outputs;
     [%expect
       {|
@@ -130,7 +127,7 @@ module Test = struct
       13: 675d3f10
       14: 46fc4d77
       15: caa42c38 |}];
-    inputs.input_state := !(outputs.output_state);
+    inputs.input := !(outputs.output);
     cycle_and_print ~sim ~outputs;
     [%expect
       {|

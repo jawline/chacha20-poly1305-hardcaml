@@ -13,10 +13,7 @@ module I : sig
 end
 
 module O : sig
-  type 'a t =
-    { output : 'a [@bits 512]
-    }
-  [@@deriving sexp_of, hardcaml]
+  type 'a t = { output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
 val create : Signal.t I.t -> Signal.t O.t

@@ -4,14 +4,14 @@ open! Signal
 
 module I : sig
   type 'a t =
-    { input_state : 'a [@bits 512]
-    ; output_state : 'a [@bits 512]
+    { input : 'a [@bits 512]
+    ; unmixed_output : 'a [@bits 512]
     }
   [@@deriving sexp_of, hardcaml]
 end
 
 module O : sig
-  type 'a t = { new_state : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
 val create : Signal.t I.t -> Signal.t O.t

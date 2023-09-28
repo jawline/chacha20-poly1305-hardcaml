@@ -7,41 +7,40 @@ open! Signal
 
 module I = struct
   type 'a t =
-    { input_state : 'a [@bits 512]
-    ; output_state : 'a [@bits 512]
+    { input : 'a [@bits 512]
+    ; unmixed_output : 'a [@bits 512]
     }
   [@@deriving sexp_of, hardcaml]
 end
 
 module O = struct
-  type 'a t = { new_state : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
-let create ({ input_state; output_state } : _ I.t) =
+let create ({ input; unmixed_output } : _ I.t) =
   (* Iterate over each word and sum them (matrix addition). Do not just
      add the signals as the carries would overflow into the next word. *)
-  let new_state =
-    Sequence.range 0 16
-    |> Sequence.map ~f:(fun index ->
-      let lo_bit = index * 32 in
-      let hi_bit = lo_bit + 31 in
-      select input_state hi_bit lo_bit +: select output_state hi_bit lo_bit)
-    |> Sequence.to_list
-    |> concat_lsb
-  in
-  { O.new_state }
+  { O.output =
+      Sequence.range 0 16
+      |> Sequence.map ~f:(fun index ->
+        let lo_bit = index * 32 in
+        let hi_bit = lo_bit + 31 in
+        select input hi_bit lo_bit +: select unmixed_output hi_bit lo_bit)
+      |> Sequence.to_list
+      |> concat_lsb
+  }
 ;;
 
 module Test_simple_matrix_addition = struct
   let cycle_and_print ~sim ~(inputs : _ I.t) ~(outputs : _ O.t) =
     printf "Start of cycle\n";
     printf "Input: \n";
-    Util.print_state !(inputs.input_state);
+    Util.print_state !(inputs.input);
     printf "Output: \n";
-    Util.print_state !(inputs.output_state);
+    Util.print_state !(inputs.unmixed_output);
     Cyclesim.cycle sim;
     printf "Mixed state: \n";
-    Util.print_state !(outputs.new_state)
+    Util.print_state !(outputs.output)
   ;;
 
   let%expect_test "fixed test input" =
@@ -61,8 +60,8 @@ module Test_simple_matrix_addition = struct
       |> List.map ~f:(Bits.of_int ~width:32)
       |> Bits.concat_lsb
     in
-    inputs.input_state := input_state;
-    inputs.output_state := output_state;
+    inputs.input := input_state;
+    inputs.unmixed_output := output_state;
     cycle_and_print ~sim ~inputs ~outputs;
     [%expect
       {|

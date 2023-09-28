@@ -13,10 +13,7 @@ module I = struct
 end
 
 module O = struct
-  type 'a t =
-    { output : 'a [@bits 512]
-    }
-  [@@deriving sexp_of, hardcaml]
+  type 'a t = { output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
 let replace ~hi ~lo ~with_ signal =
@@ -34,7 +31,7 @@ let create ({ clock; clear; set_state; input } : Signal.t I.t) =
   let ctr_hi_bit = (32 * 13) - 1 in
   let state_counter = select current_state.value ctr_hi_bit ctr_lo_bit in
   let block_output =
-    Chacha20_block.create { Chacha20_block.I.input_state = current_state.value }
+    Chacha20_block.create { Chacha20_block.I.input = current_state.value }
   in
   let encode_logic =
     [ current_state
@@ -47,17 +44,16 @@ let create ({ clock; clear; set_state; input } : Signal.t I.t) =
   in
   let body = [ if_ (set_state ==:. 1) [ current_state <-- input ] encode_logic ] in
   compile body;
-  { O.output = input ^: block_output.output_state
-  }
+  { O.output = input ^: block_output.output }
 ;;
 
 let%test_module "Functional test" =
   (module struct
-    let cycle_and_print ~sim  ~(outputs : _ O.t) =
+    let cycle_and_print ~sim ~(outputs : _ O.t) =
       printf "Start of cycle\n";
       Cyclesim.cycle sim;
       printf "Output (Real Output): \n";
-      Util.print_state !(outputs.output);
+      Util.print_state !(outputs.output)
     ;;
 
     let%expect_test "fixed test input" =
@@ -71,7 +67,7 @@ let%test_module "Functional test" =
       printf "Setting the initial state\n";
       inputs.set_state := Bits.of_int ~width:1 1;
       inputs.input := input_state;
-      cycle_and_print ~sim  ~outputs;
+      cycle_and_print ~sim ~outputs;
       [%expect
         {|
         Setting the initial state
@@ -83,7 +79,7 @@ let%test_module "Functional test" =
          12: 40ba4c78 13: cd343ec6 14: 062c21ea 15: b7417df0 |}];
       printf "Doing a single encode with the state we just set\n";
       inputs.set_state := Bits.of_int ~width:1 0;
-      cycle_and_print ~sim  ~outputs;
+      cycle_and_print ~sim ~outputs;
       [%expect
         {|
         Doing a single encode with the state we just set
