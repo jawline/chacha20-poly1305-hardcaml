@@ -34,7 +34,6 @@ module Test_from_ietf = struct
     Util.print_state !(inputs.input_state);
     Cyclesim.cycle sim;
     printf "Output: \n";
-    Util.print_state !(outputs.output_state);
     Util.bytestring_of_bits !(outputs.output_state) |> Util.hexdump
   ;;
 
@@ -58,10 +57,6 @@ module Test_from_ietf = struct
        08: 13121110 09: 17161514 10: 1b1a1918 11: 1f1e1d1c
        12: 00000001 13: 09000000 14: 4a000000 15: 00000000
       Output:
-       00: e4e7f110 01: 15593bd1 02: 1fdd0f50 03: c47120a3
-       04: c7f4d1c7 05: 0368c033 06: 9aaa2204 07: 4e6cd4c3
-       08: 466482d2 09: 09aa9f07 10: 05d7c214 11: a2028bd9
-       12: d19c12b5 13: b94e16de 14: e883d0cb 15: 4e3c50a2
       001: 10 f1 e7 e4 d1 3b 59 15 50 0f dd 1f a3 20 71 c4 | .....;Y.P.... q.
       002: c7 d1 f4 c7 33 c0 68 03 04 22 aa 9a c3 d4 6c 4e | ....3.h.."....lN
       003: d2 82 64 46 07 9f aa 09 14 c2 d7 05 d9 8b 02 a2 | ..dF............
