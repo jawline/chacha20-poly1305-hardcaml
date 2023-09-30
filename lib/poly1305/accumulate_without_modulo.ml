@@ -50,10 +50,10 @@ module Functional_test = struct
     [%expect
       {|
       Input:
-      001: 85 d6 be 78 57 55 6d 33 7f 44 52 fe 42 d5 06 a8 | ...xWUm3.DR.B...
+      001: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................
       002:                                                 |
       Output:
-      001: 85 d6 be 08 54 55 6d 03 7c 44 52 0e 40 d5 06 08 | ....TUm.|DR.@...
+      001: 2b fc 41 ab 45 af 3b af d0 eb 32 16 4b 07 7a 27 | +.A.E.;...2.K.z'
       002:                                                 | |}]
   ;;
 end
