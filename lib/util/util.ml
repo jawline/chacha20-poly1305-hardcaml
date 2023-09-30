@@ -106,6 +106,29 @@ let%expect_test "hexdump test" =
     005: 65 74 20 73 70 6c 69 74                         | et split |}]
 ;;
 
+let example_clamp_input =
+  [ 0x85
+  ; 0xd6
+  ; 0xbe
+  ; 0x78
+  ; 0x57
+  ; 0x55
+  ; 0x6d
+  ; 0x33
+  ; 0x7f
+  ; 0x44
+  ; 0x52
+  ; 0xfe
+  ; 0x42
+  ; 0xd5
+  ; 0x06
+  ; 0xa8
+  ]
+  |> List.map ~f:Char.of_int_exn
+  |> List.map ~f:Bits.of_char
+  |> Bits.concat_lsb
+;;
+
 let sunscreen_nonce =
   [ 00; 0x00; 0x00; 0x00; 0x00; 0x00; 0x00; 0x4a; 0x00; 0x00; 0x00; 0x00 ]
   |> List.map ~f:Char.of_int_exn
@@ -154,3 +177,5 @@ let replace_byte_range ~from ~to_ ~with_ signal =
   let after = select signal (width signal - 1) to_ in
   concat_lsb [ before; with_; after ]
 ;;
+
+let hexdump_bits bits = bytestring_of_bits bits |> hexdump
