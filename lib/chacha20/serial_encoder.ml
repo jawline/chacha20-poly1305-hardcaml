@@ -25,7 +25,7 @@ let create ({ clock; clear; set_state; input } : Signal.t I.t) =
     Util.select_byte_range current_state.value ~from:(4 * 12) ~to_:(4 * 13)
   in
   let block_output =
-    Chacha20_block.create { Chacha20_block.I.input = current_state.value }
+    Block.create { Block.I.input = current_state.value }
   in
   let encode_logic =
     [ current_state

@@ -11,12 +11,12 @@ module O = struct
 end
 
 let create ({ input } : _ I.t) =
-  let { Chacha20_block_no_mixing.O.output = unmixed_output } =
-    Chacha20_block_no_mixing.create { Chacha20_block_no_mixing.I.input }
+  let { Unmixed_block.O.output = unmixed_output } =
+    Unmixed_block.create { Unmixed_block.I.input }
   in
-  let { Mix_chacha_input_and_output_state.O.output } =
-    Mix_chacha_input_and_output_state.create
-      { Mix_chacha_input_and_output_state.I.input; unmixed_output }
+  let { Mix_input_and_output_state.O.output } =
+    Mix_input_and_output_state.create
+      { Mix_input_and_output_state.I.input; unmixed_output }
   in
   { O.output }
 ;;

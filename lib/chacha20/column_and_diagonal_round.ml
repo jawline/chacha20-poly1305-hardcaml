@@ -36,11 +36,11 @@ module O = struct
 end
 
 let create ({ input; _ } : _ I.t) =
-  let { Chacha20_column_round.O.output = column_output } =
-    Chacha20_column_round.create { Chacha20_column_round.I.input }
+  let { Column_round.O.output = column_output } =
+    Column_round.create { Column_round.I.input }
   in
-  let { Chacha20_diagonal_round.O.output } =
-    Chacha20_diagonal_round.create { Chacha20_diagonal_round.I.input = column_output }
+  let { Diagonal_round.O.output } =
+    Diagonal_round.create { Diagonal_round.I.input = column_output }
   in
   { O.output }
 ;;

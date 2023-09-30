@@ -23,8 +23,8 @@ let create ({ input; _ } : _ I.t) =
       Sequence.range 0 10
       |> Sequence.fold ~init:input ~f:(fun acc _i ->
         let next_round_output =
-          Chacha20_column_and_diagonal_round.create
-            { Chacha20_column_and_diagonal_round.I.input = acc }
+          Column_and_diagonal_round.create
+            { Column_and_diagonal_round.I.input = acc }
         in
         next_round_output.output)
   }
