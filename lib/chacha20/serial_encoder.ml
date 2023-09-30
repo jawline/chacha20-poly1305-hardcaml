@@ -24,9 +24,7 @@ let create ({ clock; clear; set_state; input } : Signal.t I.t) =
   let state_counter =
     Util.select_byte_range current_state.value ~from:(4 * 12) ~to_:(4 * 13)
   in
-  let block_output =
-    Block.create { Block.I.input = current_state.value }
-  in
+  let block_output = Block.create { Block.I.input = current_state.value } in
   let encode_logic =
     [ current_state
       <-- Util.replace_byte_range
