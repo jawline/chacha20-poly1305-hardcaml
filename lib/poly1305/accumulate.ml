@@ -3,38 +3,46 @@ open! Hardcaml
 open! Signal
 
 module I = struct
-  type 'a t = { input : 'a [@bits 128] } [@@deriving sexp_of, hardcaml]
+  type 'a t =
+    { input : 'a [@bits 128]
+    ; accumulation : 'a [@bits 128]
+    ; r : 'a [@bits 128]
+    }
+  [@@deriving sexp_of, hardcaml]
 end
 
 module O = struct
-  type 'a t = { output : 'a [@bits 128] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { accumulation : 'a [@bits 128] } [@@deriving sexp_of, hardcaml]
 end
 
-let create ({ input } : _ I.t) =
-  let byte index = Util.select_byte_range ~from:index ~to_:(index + 1) input in
-  let l15 = Signal.of_int ~width:8 15 in
-  let l252 = Signal.of_int ~width:8 252 in
-  let output =
-    concat_lsb
-      [ byte 0
-      ; byte 1
-      ; byte 2
-      ; byte 3 &: l15
-      ; byte 4 &: l252
-      ; byte 5
-      ; byte 6
-      ; byte 7 &: l15
-      ; byte 8 &: l252
-      ; byte 9
-      ; byte 10
-      ; byte 11 &: l15
-      ; byte 12 &: l252
-      ; byte 13
-      ; byte 14
-      ; byte 15 &: l15
-      ]
+let create ({ input; accumulation; r } : _ I.t) =
+  (* p is a 128 bit literal so unfortunately there is not a nice way
+     to represent it other than by bytes *)
+  let p =
+    [ 0x03
+    ; 0xff
+    ; 0xff
+    ; 0xff
+    ; 0xff
+    ; 0xff
+    ; 0xff
+    ; 0xff
+    ; 0xff
+    ; 0xff
+    ; 0xff
+    ; 0xff
+    ; 0xff
+    ; 0xff
+    ; 0xff
+    ; 0xff
+    ; 0xfb
+    ]
+    |> List.map ~f:(Signal.of_int ~width:8)
+    |> Signal.concat_msb
   in
-  { O.output }
+  let accumulation = accumulation +: input in
+  let accumulation = r *: accumulation %: p in
+  { O.accumulation }
 ;;
 
 module Functional_test = struct
