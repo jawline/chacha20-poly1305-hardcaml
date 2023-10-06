@@ -15,7 +15,11 @@ module I : sig
 end
 
 module O : sig
-  type 'a t = { output_accumulation : 'a [@bits 128] } [@@deriving sexp_of, hardcaml]
+  type 'a t =
+    { padded_input : 'a [@bits 130]
+    ; output_accumulation : 'a [@bits 130]
+    }
+  [@@deriving sexp_of, hardcaml]
 end
 
 val create : Signal.t I.t -> Signal.t O.t
