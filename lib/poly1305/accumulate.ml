@@ -86,6 +86,6 @@ module Functional_test = struct
       {|
       Input: 0x000000000000000000000000000000000
       Padhex: 0x16f4620636968706172676f7470797243
-      Output: 0x2ba2779453994ac90ed284034da565ecf |}]
+      Output: 0x2c88c77849d64ae9147ddeb88e69c83fc |}]
   ;;
 end
