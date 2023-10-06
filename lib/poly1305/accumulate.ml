@@ -35,8 +35,8 @@ let create ({ input; input_accumulation; r } : _ I.t) =
   let padded_input = uresize input 130 |: pad_bit in
   let accumulation = input_accumulation +: padded_input in
   let accumulation = r *: accumulation in
-  let accumulation = Int_division_by_constant.modulo ~dividend:(uresize accumulation 130) ~divisor:p in
-  { O.output_accumulation = accumulation
+  let accumulation = Int_division_by_constant.modulo ~dividend:accumulation ~divisor:p in
+  { O.output_accumulation = uresize accumulation 130
   ; padded_input = input_accumulation +: padded_input
   }
 ;;
@@ -89,6 +89,6 @@ module Functional_test = struct
     [%expect{|
       Input: 0x000000000000000000000000000000000
       Padhex: 0x16f4620636968706172676f7470797243
-      Output: 0x2ba2779453994ac90ed284034da565ecf |}]
+      Output: 0x2c88c77849d64ae9147ddeb88e69c83fc |}]
   ;;
 end
