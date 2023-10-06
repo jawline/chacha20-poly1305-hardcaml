@@ -9,6 +9,7 @@ val hexdump : string -> unit
 val sunscreen_nonce : char list
 val block_test_nonce : char list
 val example_clamp_input : Bits.t
+val example_poly1305_key : Bits.t
 val ietf_example_initial_state : nonce:char list -> counter:int -> Bits.t
 val print_state : Bits.t -> unit
 val select_byte_range : from:int -> to_:int -> Signal.t -> Signal.t

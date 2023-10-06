@@ -12,11 +12,7 @@ module I = struct
 end
 
 module O = struct
-  type 'a t =
-    { padded_input : 'a [@bits 130]
-    ; output_accumulation : 'a [@bits 130]
-    }
-  [@@deriving sexp_of, hardcaml]
+  type 'a t = { output : 'a [@bits 130] } [@@deriving sexp_of, hardcaml]
 end
 
 let p = Z.of_string_base 16 "3fffffffffffffffffffffffffffffffb"
@@ -32,9 +28,7 @@ let create ({ input; input_accumulation; r } : _ I.t) =
   let accumulation = input_accumulation +: padded_input in
   let accumulation = r *: accumulation in
   let accumulation = Int_division_by_constant.modulo ~dividend:accumulation ~divisor:p in
-  { O.output_accumulation = uresize accumulation 130
-  ; padded_input = input_accumulation +: padded_input
-  }
+  { O.output = uresize accumulation 130 }
 ;;
 
 module Functional_test = struct
@@ -46,13 +40,8 @@ module Functional_test = struct
        |> Bits.to_constant
        |> Constant.to_hex_string ~signedness:Unsigned);
     printf
-      "Padhex: 0x%s\n"
-      (!(outputs.padded_input)
-       |> Bits.to_constant
-       |> Constant.to_hex_string ~signedness:Unsigned);
-    printf
       "Output: 0x%s\n"
-      (!(outputs.output_accumulation)
+      (!(outputs.output)
        |> Bits.to_constant
        |> Constant.to_hex_string ~signedness:Unsigned)
   ;;
@@ -85,7 +74,6 @@ module Functional_test = struct
     [%expect
       {|
       Input: 0x000000000000000000000000000000000
-      Padhex: 0x16f4620636968706172676f7470797243
       Output: 0x2c88c77849d64ae9147ddeb88e69c83fc |}]
   ;;
 end

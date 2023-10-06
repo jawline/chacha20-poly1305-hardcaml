@@ -28,7 +28,7 @@ module Multiplier_and_shifts = struct
     let multiplier =
       Z.(extract ((half_of_range * two_to_l_minus_divisor / divisor) + of_int 1) 0 width)
     in
-    let multiplier_mask = Z.((shift_left (of_int 1) (width)) - of_int 1) in
+    let multiplier_mask = Z.(shift_left (of_int 1) width - of_int 1) in
     let multiplier = Z.(multiplier land multiplier_mask) in
     let sh1 = min l 1 in
     let sh2 = if l = 0 then 0 else l - 1 in
