@@ -99,7 +99,6 @@ let divide ~dividend ~divisor =
     Multiplier_and_shifts.compute ~divisor ~width:(Signal.width dividend)
   in
   let multiplier = Z.format "%x" multiplier in
-  print_s [%message multiplier];
   let multiplier =
     Constant.of_hex_string ~width:dividend_width ~signedness:Unsigned multiplier
     |> Signal.of_constant
@@ -125,8 +124,6 @@ let%expect_test "divide initialization" =
   Core.print_s [%message (divide : Signal.t) (modulo : Signal.t)];
   [%expect
     {|
-    2d3a06d3a06d3a06d3a06d3a06d3a06d4
-    2d3a06d3a06d3a06d3a06d3a06d3a06d4
     ((divide (const (width 130) (value 0x000000000000000000000000000000000)))
      (modulo (const (width 130) (value 0x000000000000000000000000000000000)))) |}]
 ;;
