@@ -74,8 +74,7 @@ module Multiplier_and_shifts = struct
 
   (* Fuzz test 63 bit ints against OCaml division
 
-      TODO: I could generator Z values instead and test an arbitrary range. *)
-
+     TODO: I could generator Z values instead and test an arbitrary range. *)
 
   let%test_unit "Fuzzing" =
     Quickcheck.test
@@ -91,8 +90,7 @@ module Multiplier_and_shifts = struct
             let locally_evaluated = dividend / divisor in
             [%test_eq: Int.t] evaluated locally_evaluated))
   ;;
-
-  end
+end
 
 let divide ~dividend ~divisor =
   let { Multiplier_and_shifts.multiplier; sh1; sh2; width = dividend_width } =
@@ -111,9 +109,15 @@ let divide ~dividend ~divisor =
 ;;
 
 let modulo ~dividend ~divisor =
-        let dividend_width = Signal.width dividend in
+  let dividend_width = Signal.width dividend in
   let quotient = divide ~dividend ~divisor in
-  let divisor = Constant.of_hex_string ~width:dividend_width ~signedness:Unsigned (Z.format "%x" divisor ) |> Signal.of_constant in
+  let divisor =
+    Constant.of_hex_string
+      ~width:dividend_width
+      ~signedness:Unsigned
+      (Z.format "%x" divisor)
+    |> Signal.of_constant
+  in
   let quotient_times_divisor = Signal.(uresize (quotient *: divisor) dividend_width) in
   Signal.(dividend -: quotient_times_divisor)
 ;;

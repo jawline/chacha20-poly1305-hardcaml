@@ -19,18 +19,14 @@ module O = struct
   [@@deriving sexp_of, hardcaml]
 end
 
-let p =
-  Z.of_string_base 16
-    "3fffffffffffffffffffffffffffffffb"
-;;
-
+let p = Z.of_string_base 16 "3fffffffffffffffffffffffffffffffb"
 let pad_bit = sll (Signal.of_int ~width:130 1) 128
 
 let create ({ input; input_accumulation; r } : _ I.t) =
   (* Algorithm:
      1) pad input block with 1 bit
      2) accumulation = accumulation + padded input
-     3) accumulation = r * accumulation (cut to 129 bits)
+     3) accumulation = r * accumulation
      4) accumulation = accumulation % p. *)
   let padded_input = uresize input 130 |: pad_bit in
   let accumulation = input_accumulation +: padded_input in
@@ -86,9 +82,10 @@ module Functional_test = struct
     inputs.r := ietf_example_r_clamped;
     inputs.input := ietf_example_block;
     cycle_and_print ~sim ~inputs ~outputs;
-    [%expect{|
+    [%expect
+      {|
       Input: 0x000000000000000000000000000000000
       Padhex: 0x16f4620636968706172676f7470797243
-      Output: 0x2c88c77849d64ae9147ddeb88e69c83fc |}]
+      Output: 0x2ba2779453994ac90ed284034da565ecf |}]
   ;;
 end
