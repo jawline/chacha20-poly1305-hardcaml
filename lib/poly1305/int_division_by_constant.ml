@@ -25,6 +25,8 @@ module Multiplier_and_shifts = struct
     let multiplier =
       Z.(extract ((half_of_range * two_to_l_minus_divisor / divisor) + of_int 1) 0 width)
     in
+    let multiplier_mask = Z.((shift_left (of_int 1) (width)) - of_int 1) in
+    let multiplier = Z.(multiplier land multiplier_mask) in
     let sh1 = min l 1 in
     let sh2 = if l = 0 then 0 else l - 1 in
     { multiplier; sh1; sh2; width }
@@ -40,12 +42,14 @@ module Multiplier_and_shifts = struct
   ;;
 
   let%expect_test "Example" =
-    let t = compute ~width:128 ~divisor:(Z.of_int 10) in
+    let t = compute ~width:256 ~divisor:(Z.of_int 10) in
     print_s
       [%message "" ~multiplier:(Z.to_string t.multiplier) (t.sh1 : int) (t.sh2 : int)];
     [%expect
       {|
-      ((multiplier 204169420152563078078024764459060926874) (t.sh1 1) (t.sh2 3)) |}];
+      ((multiplier
+        69475253542389717254142591005212744711961990799384338423674550404747877783962)
+       (t.sh1 1) (t.sh2 3)) |}];
     let eval i =
       let result = evaluate t (Z.of_int i) |> Z.to_string in
       print_endline result
