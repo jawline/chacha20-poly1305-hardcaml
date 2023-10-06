@@ -1,8 +1,11 @@
 open! Core
 open! Hardcaml
 
-(** This module computes a multiplier and two shifts that can be used to do an N bit division
-    with a fixed divisor using a (2*N) bit width multiplication and two bit shifts.
+(** This module finds values l and multiplier such that (dividend * multipler)
+    / (2^(N + l)) = dividend / divisor.
+
+    From this we can do division over integers using multiplication with a
+    multiplication and two shifts.
 
     Described in: https://dl.acm.org/doi/pdf/10.1145/178243.178249 *)
 module Multiplier_and_shifts = struct
