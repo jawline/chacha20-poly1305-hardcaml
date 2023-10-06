@@ -108,10 +108,15 @@ let divide ~dividend ~divisor =
     Signal.(srl (upper_half +: lower_half) sh2))
 ;;
 
+let modulo ~dividend ~divisor =
+  let quotient = divide ~dividend ~divisor in
+  Signal.(dividend - (quotient *: divisor))
+;;
+
 let%expect_test "divide initialization" =
-  let signal = divide ~dividend:(Signal.of_int ~width:130 0) ~divisor:(Z.of_int 150) in
-  Core.print_s [%message (signal : Signal.t)];
-  ();
+  let divide = divide ~dividend:(Signal.of_int ~width:130 0) ~divisor:(Z.of_int 150) in
+  let modulo = modulo ~dividend:(Signal.of_int ~width:130 0) ~divisor:(Z.of_int 150) in
+  Core.print_s [%message (divide : Signal.t) (modulo : Signal.t)];
   [%expect
     {|
     2d3a06d3a06d3a06d3a06d3a06d3a06d4
