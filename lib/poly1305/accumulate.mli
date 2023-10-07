@@ -8,6 +8,7 @@ open! Signal
 module I : sig
   type 'a t =
     { input : 'a [@bits 128]
+    ; number_of_input_bytes_minus_one : 'a [@bits 4]
     ; input_accumulation : 'a [@bits 130]
     ; r : 'a [@bits 128]
     }

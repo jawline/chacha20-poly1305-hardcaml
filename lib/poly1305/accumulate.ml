@@ -5,6 +5,7 @@ open! Signal
 module I = struct
   type 'a t =
     { input : 'a [@bits 128]
+    ; number_of_input_bytes_minus_one : 'a [@bits 4]
     ; input_accumulation : 'a [@bits 130]
     ; r : 'a [@bits 128]
     }
@@ -16,18 +17,37 @@ module O = struct
 end
 
 let p = Z.of_string_base 16 "3fffffffffffffffffffffffffffffffb"
-let pad_bit = sll (Signal.of_int ~width:130 1) 128
 
-let create ({ input; input_accumulation; r } : _ I.t) =
+(** In the accumulate Poly1305 step we need to pad the number of octets
+    provided with a leading 1 bit.
+
+    E.g, if a single byte is provided 0b1111_1111 then we should pad it to
+    0b1_1111_1111 but if all 16 are provided then we should pad it with a 129th
+    bit. We do this by ORing the input with the shifted bit, where the shifted
+    bit is computed by muxing the input number of bytes minus one (so that it
+    fits in the range of 4 bits, 0..15). *)
+let pad_input input number_of_input_bytes_minus_one =
+  let shift_bits index = (index + 1) * 8 in
+  let table_of_shifted_bits =
+    (List.init ~f:(fun index -> sll (Signal.of_int ~width:130 1) (shift_bits index))) 16
+  in
+  let pad_bit = mux number_of_input_bytes_minus_one table_of_shifted_bits in
+  let input = uresize input 130 in
+  input |: pad_bit
+;;
+
+let create ({ input; input_accumulation; number_of_input_bytes_minus_one; r } : _ I.t) =
   (* Algorithm:
      1) pad input block with 1 bit
      2) accumulation = accumulation + padded input
      3) accumulation = r * accumulation
      4) accumulation = accumulation % p. *)
-  let padded_input = uresize input 130 |: pad_bit in
-  let accumulation = input_accumulation +: padded_input in
-  let accumulation = r *: accumulation in
-  let accumulation = Int_division_by_constant.modulo ~dividend:accumulation ~divisor:p in
+  let padded_input = pad_input input number_of_input_bytes_minus_one in
+  let accumulation = uresize input_accumulation 131 +: uresize padded_input 131 in
+  let accumulation_mul = r *: accumulation in
+  let accumulation =
+    Int_division_by_constant.modulo ~dividend:accumulation_mul ~divisor:p
+  in
   { O.output = uresize accumulation 130 }
 ;;
 
@@ -35,10 +55,11 @@ module Functional_test = struct
   let cycle_and_print ~sim ~(inputs : _ I.t) ~(outputs : _ O.t) =
     Cyclesim.cycle sim;
     printf
-      "Input: 0x%s\n"
+      "Input accumulation: 0x%s Input block: 0x%s\n"
       (!(inputs.input_accumulation)
        |> Bits.to_constant
-       |> Constant.to_hex_string ~signedness:Unsigned);
+       |> Constant.to_hex_string ~signedness:Unsigned)
+      (!(inputs.input) |> Bits.to_constant |> Constant.to_hex_string ~signedness:Unsigned);
     printf
       "Output: 0x%s\n"
       (!(outputs.output)
@@ -46,34 +67,44 @@ module Functional_test = struct
        |> Constant.to_hex_string ~signedness:Unsigned)
   ;;
 
-  let ietf_example_r_clamped =
-    Constant.of_hex_string
-      ~signedness:Unsigned
-      ~width:128
-      "806d5400e52447c036d555408bed685"
-    |> Bits.of_constant
+  let of_hex inp =
+    Constant.of_hex_string ~signedness:Unsigned ~width:128 inp |> Bits.of_constant
   ;;
 
-  let ietf_example_block =
-    Constant.of_hex_string
-      ~signedness:Unsigned
-      ~width:128
-      "6f4620636968706172676f7470797243"
-    |> Bits.of_constant
-  ;;
+  let ietf_example_r_clamped = of_hex "806d5400e52447c036d555408bed685"
+  let ietf_example_block_zero = of_hex "6f4620636968706172676f7470797243"
+  let ietf_example_block_one = of_hex "6f7247206863726165736552206d7572"
+  let ietf_example_block_two = of_hex "7075"
 
-  let%expect_test "fixed test input" =
+  let%expect_test "IETF example test block one" =
     let module Simulator = Cyclesim.With_interface (I) (O) in
     let sim = Simulator.create create in
     let inputs : _ I.t = Cyclesim.inputs sim in
     let outputs : _ O.t = Cyclesim.outputs sim in
     inputs.input_accumulation := Bits.of_int ~width:130 0;
     inputs.r := ietf_example_r_clamped;
-    inputs.input := ietf_example_block;
+    inputs.input := ietf_example_block_zero;
+    inputs.number_of_input_bytes_minus_one := Bits.of_int ~width:4 15;
     cycle_and_print ~sim ~inputs ~outputs;
     [%expect
       {|
-      Input: 0x000000000000000000000000000000000
-      Output: 0x2c88c77849d64ae9147ddeb88e69c83fc |}]
+      Input accumulation: 0x000000000000000000000000000000000 Input block: 0x6f4620636968706172676f7470797243
+      Output: 0x2c88c77849d64ae9147ddeb88e69c83fc |}];
+    inputs.input_accumulation := !(outputs.output);
+    inputs.input := ietf_example_block_one;
+    inputs.number_of_input_bytes_minus_one := Bits.of_int ~width:4 15;
+    cycle_and_print ~sim ~inputs ~outputs;
+    [%expect
+      {|
+      Input accumulation: 0x2c88c77849d64ae9147ddeb88e69c83fc Input block: 0x6f7247206863726165736552206d7572
+      Output: 0x2d8adaf23b0337fa7cccfb4ea344b30de |}];
+    inputs.input_accumulation := !(outputs.output);
+    inputs.input := ietf_example_block_two;
+    inputs.number_of_input_bytes_minus_one := Bits.of_int ~width:4 1;
+    cycle_and_print ~sim ~inputs ~outputs;
+    [%expect
+      {|
+      Input accumulation: 0x2d8adaf23b0337fa7cccfb4ea344b30de Input block: 0x00000000000000000000000000007075
+      Output: 0x28d31b7caff946c77c8844335369d03a7 |}]
   ;;
 end

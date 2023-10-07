@@ -85,17 +85,15 @@ module Multiplier_and_shifts = struct
 
   let%test_unit "Fuzzing" =
     Quickcheck.test
-      ~sexp_of:[%sexp_of: int]
-      (Int.gen_incl 1 Int.max_value)
-      ~f:(fun divisor ->
+      ~sexp_of:[%sexp_of: int * int]
+      (Quickcheck.Generator.tuple2
+         (Int.gen_incl 0 Int.max_value)
+         (Int.gen_incl 1 Int.max_value))
+      ~f:(fun (dividend, divisor) ->
         let t = compute ~width:63 ~divisor:(Z.of_int divisor) in
-        Quickcheck.test
-          ~sexp_of:[%sexp_of: int]
-          (Int.gen_incl 0 Int.max_value)
-          ~f:(fun dividend ->
-            let evaluated = evaluate t (Z.of_int dividend) |> Z.to_int in
-            let locally_evaluated = dividend / divisor in
-            [%test_eq: Int.t] evaluated locally_evaluated))
+        let evaluated = evaluate t (Z.of_int dividend) |> Z.to_int in
+        let locally_evaluated = dividend / divisor in
+        [%test_eq: Int.t] evaluated locally_evaluated)
   ;;
 end
 
