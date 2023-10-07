@@ -121,7 +121,7 @@ let modulo ~dividend ~divisor =
 let%expect_test "divide initialization" =
   let divide = divide ~dividend:(Signal.of_int ~width:130 0) ~divisor:(Z.of_int 150) in
   let modulo = modulo ~dividend:(Signal.of_int ~width:130 0) ~divisor:(Z.of_int 150) in
-  Core.print_s [%message (divide : Signal.t) (modulo : Signal.t)];
+  print_s [%message (divide : Signal.t) (modulo : Signal.t)];
   [%expect
     {|
     ((divide (const (width 130) (value 0x000000000000000000000000000000000)))
