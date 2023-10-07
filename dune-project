@@ -5,11 +5,11 @@
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github jawline/chacha20-hardcaml))
 
-(authors "Author Name")
+(authors "Blake Loring")
 
-(maintainers "Maintainer Name")
+(maintainers "Blake Loring")
 
 (license LICENSE)
 
@@ -17,10 +17,7 @@
 
 (package
  (name chacha_hardcaml)
- (synopsis "A short synopsis")
- (description "A longer description")
- (depends ocaml dune)
- (tags
-  (topics "to describe" your project)))
+ (synopsis "An implementation of Chacha20 and Poly1305 in Hardcaml")
+ (description "An implementation of Chacha20 and Poly1305 in Hardcaml")
+ (depends ocaml dune))
 
-; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project

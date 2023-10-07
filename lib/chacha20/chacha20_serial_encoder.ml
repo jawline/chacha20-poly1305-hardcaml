@@ -16,7 +16,7 @@ module O = struct
   type 'a t = { output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
-let create ({ clock; clear; set_state; input } : Signal.t I.t) =
+let create _scope ({ clock; clear; set_state; input } : Signal.t I.t) =
   let open Always in
   let open Variable in
   let r_sync = Reg_spec.create ~clock ~clear () in
@@ -41,6 +41,16 @@ let create ({ clock; clear; set_state; input } : Signal.t I.t) =
   { O.output = input ^: block_output.output }
 ;;
 
+let hierarchical (scope : Scope.t) (input : Signal.t I.t) =
+  let module H = Hierarchy.In_scope (I) (O) in
+  H.hierarchical
+    ~scope
+    ~name:"chacha20_serial_encoder"
+    ~instance:"the_one_and_only"
+    create
+    input
+;;
+
 let%test_module "Functional test" =
   (module struct
     let cycle_and_print ~sim ~(outputs : _ O.t) =
@@ -52,7 +62,7 @@ let%test_module "Functional test" =
 
     let%expect_test "fixed test input" =
       let module Simulator = Cyclesim.With_interface (I) (O) in
-      let sim = Simulator.create create in
+      let sim = Simulator.create (create (Scope.create ~flatten_design:true ())) in
       let inputs : _ I.t = Cyclesim.inputs sim in
       let outputs : _ O.t = Cyclesim.outputs sim in
       let input_state =
@@ -121,7 +131,7 @@ let%test_module "IETF sunblock test" =
 
     let%expect_test "encrypt and decrypt a two block passage about suncream" =
       let module Simulator = Cyclesim.With_interface (I) (O) in
-      let sim = Simulator.create create in
+      let sim = Simulator.create (create (Scope.create ~flatten_design:true ())) in
       let inputs : _ I.t = Cyclesim.inputs sim in
       let outputs : _ O.t = Cyclesim.outputs sim in
       (* Set the initial state for encryption *)

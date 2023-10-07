@@ -1,4 +1,18 @@
 (executable
- (public_name chacha_hardcaml)
- (name main)
- (libraries chacha_hardcaml))
+ (public_name chacha_hardcaml_cli)
+ (name chacha_hardcaml_cli)
+ (libraries
+  chacha_hardcaml
+  hardcaml
+  core
+  async
+  zarith
+  async_unix
+  hardcaml_waveterm)
+ (preprocess
+  (pps
+   ppx_jane
+   ppx_deriving_hardcaml
+   ppx_deriving.show
+   ppx_deriving.ord
+   ppx_expect)))
