@@ -52,7 +52,6 @@ let%test_module "Functional test" =
     ;;
 
     let cycle_and_print ~sim ~(inputs : _ I.t) =
-      printf "Start of cycle\n";
       Util.bytestring_of_bits !(inputs.input) |> Util.hexdump;
       Cyclesim.cycle sim
     ;;
@@ -62,14 +61,11 @@ let%test_module "Functional test" =
       let sim = Simulator.create create in
       let inputs : _ I.t = Cyclesim.inputs sim in
       let outputs : _ O.t = Cyclesim.outputs sim in
-      printf "Starting\n";
       inputs.start := Bits.of_int ~width:1 1;
       inputs.key := Util.example_poly1305_key;
       cycle_and_print ~sim ~inputs;
       [%expect
         {|
-        Starting
-        Start of cycle
         001: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................
         002:                                                 | |}];
       inputs.start := Bits.of_int ~width:1 0;
@@ -78,7 +74,6 @@ let%test_module "Functional test" =
       cycle_and_print ~sim ~inputs;
       [%expect
         {|
-        Start of cycle
         001: 43 72 79 70 74 6f 67 72 61 70 68 69 63 20 46 6f | Cryptographic Fo
         002:                                                 | |}];
       inputs.input := Bits.select example_text_bits 255 128;
@@ -86,7 +81,6 @@ let%test_module "Functional test" =
       cycle_and_print ~sim ~inputs;
       [%expect
         {|
-        Start of cycle
         001: 72 75 6d 20 52 65 73 65 61 72 63 68 20 47 72 6f | rum Research Gro
         002:                                                 | |}];
       inputs.input := Bits.select example_text_bits 383 256;
@@ -94,7 +88,6 @@ let%test_module "Functional test" =
       cycle_and_print ~sim ~inputs;
       [%expect
         {|
-        Start of cycle
         001: 75 70 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | up..............
         002:                                                 | |}];
       (* We expect the tag: a8:06:1d:c1:30:51:36:c6:c2:2b:8b:af:0c:01:27:a9 *)
