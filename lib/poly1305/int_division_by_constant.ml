@@ -4,8 +4,7 @@ open! Hardcaml
 (** This module finds values l and multiplier such that (dividend * multipler)
     / (2^(N + l)) = dividend / divisor.
 
-    From this we can do division over integers using multiplication with a
-    multiplication and two shifts.
+    From this we can do division over integers using multiplication and bit-shifts.
 
     Described in: https://dl.acm.org/doi/pdf/10.1145/178243.178249 *)
 module Multiplier_and_shifts = struct
@@ -82,7 +81,6 @@ module Multiplier_and_shifts = struct
   (* Fuzz test 63 bit ints against OCaml division
 
      TODO: I could generator Z values instead and test an arbitrary range. *)
-
   let%test_unit "Fuzzing" =
     Quickcheck.test
       ~sexp_of:[%sexp_of: int * int]

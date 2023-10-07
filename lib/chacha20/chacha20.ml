@@ -1,2 +1,1 @@
-module Block = Block
-module Serial_encoder = Serial_encoder
+module Serial_encoder = Chacha20_serial_encoder

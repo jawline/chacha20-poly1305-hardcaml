@@ -27,9 +27,9 @@ let create
   let { Clamp.O.output = r } = Clamp.create { Clamp.I.input = Signal.select key 127 0 } in
   let s = Signal.select key 255 128 in
   let accumulator = reg ~enable:vdd ~width:130 r_sync in
-  let { Accumulate.O.output = next_accumulator; _ } =
-    Accumulate.create
-      { Accumulate.I.input
+  let { Poly1305_block.O.output = next_accumulator; _ } =
+    Poly1305_block.create
+      { Poly1305_block.I.input
       ; input_accumulation = accumulator.value
       ; r
       ; number_of_input_bytes_minus_one
