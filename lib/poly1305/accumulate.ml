@@ -55,11 +55,12 @@ module Functional_test = struct
   let cycle_and_print ~sim ~(inputs : _ I.t) ~(outputs : _ O.t) =
     Cyclesim.cycle sim;
     printf
-      "Input accumulation: 0x%s Input block: 0x%s\n"
+      "Accumulator: 0x%s Block: 0x%s R: 0x%s\n"
       (!(inputs.input_accumulation)
        |> Bits.to_constant
        |> Constant.to_hex_string ~signedness:Unsigned)
-      (!(inputs.input) |> Bits.to_constant |> Constant.to_hex_string ~signedness:Unsigned);
+      (!(inputs.input) |> Bits.to_constant |> Constant.to_hex_string ~signedness:Unsigned)
+      (!(inputs.r) |> Bits.to_constant |> Constant.to_hex_string ~signedness:Unsigned);
     printf
       "Output: 0x%s\n"
       (!(outputs.output)
@@ -88,7 +89,7 @@ module Functional_test = struct
     cycle_and_print ~sim ~inputs ~outputs;
     [%expect
       {|
-      Input accumulation: 0x000000000000000000000000000000000 Input block: 0x6f4620636968706172676f7470797243
+      Accumulator: 0x000000000000000000000000000000000 Block: 0x6f4620636968706172676f7470797243 R: 0x0806d5400e52447c036d555408bed685
       Output: 0x2c88c77849d64ae9147ddeb88e69c83fc |}];
     inputs.input_accumulation := !(outputs.output);
     inputs.input := ietf_example_block_one;
@@ -96,7 +97,7 @@ module Functional_test = struct
     cycle_and_print ~sim ~inputs ~outputs;
     [%expect
       {|
-      Input accumulation: 0x2c88c77849d64ae9147ddeb88e69c83fc Input block: 0x6f7247206863726165736552206d7572
+      Accumulator: 0x2c88c77849d64ae9147ddeb88e69c83fc Block: 0x6f7247206863726165736552206d7572 R: 0x0806d5400e52447c036d555408bed685
       Output: 0x2d8adaf23b0337fa7cccfb4ea344b30de |}];
     inputs.input_accumulation := !(outputs.output);
     inputs.input := ietf_example_block_two;
@@ -104,7 +105,7 @@ module Functional_test = struct
     cycle_and_print ~sim ~inputs ~outputs;
     [%expect
       {|
-      Input accumulation: 0x2d8adaf23b0337fa7cccfb4ea344b30de Input block: 0x00000000000000000000000000007075
+      Accumulator: 0x2d8adaf23b0337fa7cccfb4ea344b30de Block: 0x00000000000000000000000000007075 R: 0x0806d5400e52447c036d555408bed685
       Output: 0x28d31b7caff946c77c8844335369d03a7 |}]
   ;;
 end
