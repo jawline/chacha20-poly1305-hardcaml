@@ -68,10 +68,7 @@ module Functional_test = struct
        |> Constant.to_hex_string ~signedness:Unsigned)
   ;;
 
-  let of_hex inp =
-    Constant.of_hex_string ~signedness:Unsigned ~width:128 inp |> Bits.of_constant
-  ;;
-
+  let of_hex inp = Bits.of_hex ~signedness:Unsigned ~width:128 inp
   let ietf_example_r_clamped = of_hex "806d5400e52447c036d555408bed685"
   let ietf_example_block_zero = of_hex "6f4620636968706172676f7470797243"
   let ietf_example_block_one = of_hex "6f7247206863726165736552206d7572"

@@ -100,10 +100,7 @@ let divide ~dividend ~divisor =
     Multiplier_and_shifts.compute ~divisor ~width:(Signal.width dividend)
   in
   let multiplier = Z.format "%x" multiplier in
-  let multiplier =
-    Constant.of_hex_string ~width:dividend_width ~signedness:Unsigned multiplier
-    |> Signal.of_constant
-  in
+  let multiplier = Signal.of_hex ~width:dividend_width ~signedness:Unsigned multiplier in
   Signal.(
     let scaled_by_multiplier = dividend *: multiplier in
     let upper_half = uresize (srl scaled_by_multiplier dividend_width) dividend_width in
@@ -115,11 +112,7 @@ let modulo ~dividend ~divisor =
   let dividend_width = Signal.width dividend in
   let quotient = divide ~dividend ~divisor in
   let divisor =
-    Constant.of_hex_string
-      ~width:dividend_width
-      ~signedness:Unsigned
-      (Z.format "%x" divisor)
-    |> Signal.of_constant
+    Signal.of_hex ~width:dividend_width ~signedness:Unsigned (Z.format "%x" divisor)
   in
   let quotient_times_divisor = Signal.(uresize (quotient *: divisor) dividend_width) in
   Signal.(dividend -: quotient_times_divisor)
