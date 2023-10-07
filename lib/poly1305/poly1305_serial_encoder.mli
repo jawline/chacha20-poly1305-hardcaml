@@ -2,6 +2,18 @@ open! Core
 open! Hardcaml
 open! Signal
 
+(** The module implements a serial poly1305 encoder which computes up to one
+    16-byte block per cycle.
+
+    Initially, a user must seed the serial encoder with a key by setting start
+    := 1 ; key := a 256 bit key.
+
+    Then, the user must split their input into [< 128] bit blocks and set start
+    := 0; input := block; number_of_input_bytes_minus := original block width /
+    8 - 1.
+
+    After supplying the final block, the user can read output to get the poly1305
+    tag. *)
 module I : sig
   type 'a t =
     { clock : 'a [@bits 1]
