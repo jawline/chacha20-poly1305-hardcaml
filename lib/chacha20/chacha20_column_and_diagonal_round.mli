@@ -10,4 +10,5 @@ module O : sig
   type 'a t = { round_output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
-val create : Signal.t I.t -> Signal.t O.t
+val create : Scope.t -> Signal.t I.t -> Signal.t O.t
+val hierarchical : Scope.t -> Signal.t I.t -> Signal.t O.t

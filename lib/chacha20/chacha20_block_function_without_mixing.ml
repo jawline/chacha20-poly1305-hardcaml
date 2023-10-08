@@ -14,7 +14,7 @@ module O = struct
   type 'a t = { round_output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
-let create _scope ({ round_input; _ } : _ I.t) =
+let create scope ({ round_input; _ } : _ I.t) =
   (* Chacha20's block function is 10 column rounds and 10 diagonal rounds back
      to back. As per the pseudocode in the IETF spec we merge the column and
      diagonal rounds into a single circuit
@@ -23,7 +23,8 @@ let create _scope ({ round_input; _ } : _ I.t) =
       Sequence.range 0 10
       |> Sequence.fold ~init:round_input ~f:(fun acc _i ->
         let { Chacha20_column_and_diagonal_round.O.round_output } =
-          Chacha20_column_and_diagonal_round.create
+          Chacha20_column_and_diagonal_round.hierarchical
+            scope
             { Chacha20_column_and_diagonal_round.I.round_input = acc }
         in
         round_output)

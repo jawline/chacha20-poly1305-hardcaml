@@ -51,10 +51,20 @@ let diagonal_round round_input =
   state'
 ;;
 
-let create ({ round_input; _ } : _ I.t) =
+let create _scope ({ round_input; _ } : _ I.t) =
   let column_output = column_round round_input in
   let round_output = diagonal_round column_output in
   { O.round_output }
+;;
+
+let hierarchical (scope : Scope.t) (input : Signal.t I.t) =
+  let module H = Hierarchy.In_scope (I) (O) in
+  H.hierarchical
+    ~scope
+    ~name:"chacha20_serial_encoder"
+    ~instance:"the_one_and_only"
+    create
+    input
 ;;
 
 module Test = struct
@@ -74,7 +84,7 @@ module Test = struct
 
   let%expect_test "fixed test input" =
     let module Simulator = Cyclesim.With_interface (I) (O) in
-    let sim = Simulator.create create in
+    let sim = Simulator.create (create (Scope.create ~flatten_design:true ())) in
     let inputs : _ I.t = Cyclesim.inputs sim in
     let outputs : _ O.t = Cyclesim.outputs sim in
     let oi v = Bits.of_int ~width:32 v in
