@@ -144,7 +144,6 @@ module Test = struct
         o  c = 0x4581472e
         o  d = 0x5881c4bb
       |} *)
-    (* TODO: Generate inputs from a verified implementation to compare *)
     let a, b, c, d = test ~a:0x11111111 ~b:0x01020304 ~c:0x9b8d6f43 ~d:0x01234567 in
     printf "a: %x, b: %x, c: %x, d: %x\n" a b c d;
     [%expect {|
@@ -187,10 +186,9 @@ module Test = struct
       end
 
       let create ({ state } : _ I.t) =
-        let state_out =
-          With_chacha20_state.qround ~which_words:{ a = 2; b = 7; c = 8; d = 13 } state
-        in
-        { O.state_out }
+        { O.state_out =
+            With_chacha20_state.qround ~which_words:{ a = 2; b = 7; c = 8; d = 13 } state
+        }
       ;;
     end
 
