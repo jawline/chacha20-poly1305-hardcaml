@@ -7,16 +7,16 @@ module I = struct
     { clock : 'a [@bits 1]
     ; clear : 'a [@bits 1]
     ; set_state : 'a [@bits 1]
-    ; input : 'a [@bits 512]
+    ; round_input : 'a [@bits 512]
     }
   [@@deriving sexp_of, hardcaml]
 end
 
 module O = struct
-  type 'a t = { output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { round_output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
-let create _scope ({ clock; clear; set_state; input } : Signal.t I.t) =
+let create scope ({ clock; clear; set_state; round_input } : Signal.t I.t) =
   let open Always in
   let open Variable in
   let r_sync = Reg_spec.create ~clock ~clear () in
@@ -24,8 +24,10 @@ let create _scope ({ clock; clear; set_state; input } : Signal.t I.t) =
   let state_counter =
     Util.select_byte_range current_state.value ~from:(4 * 12) ~to_:(4 * 13)
   in
-  let block_output =
-    Chacha20_block.create { Chacha20_block.I.input = current_state.value }
+  let { Chacha20_block.O.round_output = block_output } =
+    Chacha20_block.hierarchical
+      scope
+      { Chacha20_block.I.round_input = current_state.value }
   in
   let encode_logic =
     [ current_state
@@ -36,9 +38,9 @@ let create _scope ({ clock; clear; set_state; input } : Signal.t I.t) =
             current_state.value
     ]
   in
-  let body = [ if_ (set_state ==:. 1) [ current_state <-- input ] encode_logic ] in
+  let body = [ if_ (set_state ==:. 1) [ current_state <-- round_input ] encode_logic ] in
   compile body;
-  { O.output = input ^: block_output.output }
+  { O.round_output = round_input ^: block_output }
 ;;
 
 let hierarchical (scope : Scope.t) (input : Signal.t I.t) =
@@ -57,7 +59,7 @@ let%test_module "Functional test" =
       printf "Start of cycle\n";
       Cyclesim.cycle sim;
       printf "Output (Real Output): \n";
-      Util.print_state !(outputs.output)
+      Util.print_state !(outputs.round_output)
     ;;
 
     let%expect_test "fixed test input" =
@@ -70,7 +72,7 @@ let%test_module "Functional test" =
       in
       printf "Setting the initial state\n";
       inputs.set_state := Bits.of_int ~width:1 1;
-      inputs.input := input_state;
+      inputs.round_input := input_state;
       cycle_and_print ~sim ~outputs;
       [%expect
         {|
@@ -115,10 +117,10 @@ let%test_module "IETF sunblock test" =
   (module struct
     let cycle_and_print ~sim ~(inputs : _ I.t) ~(outputs : _ O.t) =
       printf "Start of cycle\n";
-      Util.bytestring_of_bits !(inputs.input) |> Util.hexdump;
+      Util.bytestring_of_bits !(inputs.round_input) |> Util.hexdump;
       Cyclesim.cycle sim;
       printf "Output (Real Output): \n";
-      Util.bytestring_of_bits !(outputs.output) |> Util.hexdump
+      Util.bytestring_of_bits !(outputs.round_output) |> Util.hexdump
     ;;
 
     let example_text_bits =
@@ -136,7 +138,7 @@ let%test_module "IETF sunblock test" =
       let outputs : _ O.t = Cyclesim.outputs sim in
       (* Set the initial state for encryption *)
       inputs.set_state := Bits.of_int ~width:1 1;
-      inputs.input
+      inputs.round_input
       := Util.ietf_example_initial_state ~nonce:Util.sunscreen_nonce ~counter:0;
       cycle_and_print ~sim ~inputs ~outputs;
       [%expect
@@ -154,9 +156,9 @@ let%test_module "IETF sunblock test" =
         004: 41 a2 39 d2 0d fc 74 c8 17 71 56 47 9c 9c 1e 4b | A.9.\r.t..qVG...K
         005:                                                 | |}];
       inputs.set_state := Bits.of_int ~width:1 0;
-      inputs.input := Bits.select example_text_bits 511 0;
+      inputs.round_input := Bits.select example_text_bits 511 0;
       cycle_and_print ~sim ~inputs ~outputs;
-      let first_block_ciphertext = Bits.to_string !(outputs.output) in
+      let first_block_ciphertext = Bits.to_string !(outputs.round_output) in
       [%expect
         {|
         Start of cycle
@@ -171,11 +173,11 @@ let%test_module "IETF sunblock test" =
         003: f9 1b 65 c5 52 47 33 ab 8f 59 3d ab cd 62 b3 57 | ..e.RG3..Y=..b.W
         004: 16 39 d6 24 e6 51 52 ab 8f 53 0c 35 9f 08 61 d8 | .9.$.QR..S.5..a.
         005:                                                 | |}];
-      inputs.input
+      inputs.round_input
       := Bits.concat_lsb
            [ Bits.select example_text_bits 911 512; Bits.of_int ~width:(1024 - 912) 0 ];
       cycle_and_print ~sim ~inputs ~outputs;
-      let second_block_ciphertext = Bits.to_string !(outputs.output) in
+      let second_block_ciphertext = Bits.to_string !(outputs.round_output) in
       [%expect
         {|
         Start of cycle
@@ -192,7 +194,7 @@ let%test_module "IETF sunblock test" =
         005:                                                 | |}];
       (* Resetting the state for decryption *)
       inputs.set_state := Bits.of_int ~width:1 1;
-      inputs.input
+      inputs.round_input
       := Util.ietf_example_initial_state ~nonce:Util.sunscreen_nonce ~counter:0;
       cycle_and_print ~sim ~inputs ~outputs;
       [%expect
@@ -211,7 +213,7 @@ let%test_module "IETF sunblock test" =
         005:                                                 | |}];
       (* Decrypt first block *)
       inputs.set_state := Bits.of_int ~width:1 0;
-      inputs.input := Bits.of_string first_block_ciphertext;
+      inputs.round_input := Bits.of_string first_block_ciphertext;
       cycle_and_print ~sim ~inputs ~outputs;
       [%expect
         {|
@@ -229,7 +231,7 @@ let%test_module "IETF sunblock test" =
         005:                                                 | |}];
       (* Decrypt second block *)
       inputs.set_state := Bits.of_int ~width:1 0;
-      inputs.input := Bits.of_string second_block_ciphertext;
+      inputs.round_input := Bits.of_string second_block_ciphertext;
       cycle_and_print ~sim ~inputs ~outputs;
       [%expect
         {|

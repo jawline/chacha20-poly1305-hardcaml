@@ -7,44 +7,54 @@ open! Signal
 
 module I = struct
   type 'a t =
-    { input : 'a [@bits 512]
-    ; unmixed_output : 'a [@bits 512]
+    { round_input : 'a [@bits 512]
+    ; unmixed_round_output : 'a [@bits 512]
     }
   [@@deriving sexp_of, hardcaml]
 end
 
 module O = struct
-  type 'a t = { output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { mixed_output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
-let create ({ input; unmixed_output } : _ I.t) =
+let create _scope ({ round_input; unmixed_round_output } : _ I.t) =
   (* Iterate over each word and sum them (matrix addition). Do not just
      add the signals as the carries would overflow into the next word. *)
-  { O.output =
+  { O.mixed_output =
       Sequence.range 0 16
       |> Sequence.map ~f:(fun index ->
         let slot = Util.select_byte_range ~from:(index * 4) ~to_:((index + 1) * 4) in
-        slot input +: slot unmixed_output)
+        slot round_input +: slot unmixed_round_output)
       |> Sequence.to_list
       |> concat_lsb
   }
+;;
+
+let hierarchical (scope : Scope.t) (input : Signal.t I.t) =
+  let module H = Hierarchy.In_scope (I) (O) in
+  H.hierarchical
+    ~scope
+    ~name:"chacha20_mixing_function"
+    ~instance:"chacha20_mixing_function"
+    create
+    input
 ;;
 
 module Test_simple_matrix_addition = struct
   let cycle_and_print ~sim ~(inputs : _ I.t) ~(outputs : _ O.t) =
     printf "Start of cycle\n";
     printf "Input: \n";
-    Util.print_state !(inputs.input);
+    Util.print_state !(inputs.round_input);
     printf "Output: \n";
-    Util.print_state !(inputs.unmixed_output);
+    Util.print_state !(inputs.unmixed_round_output);
     Cyclesim.cycle sim;
     printf "Mixed state: \n";
-    Util.print_state !(outputs.output)
+    Util.print_state !(outputs.mixed_output)
   ;;
 
   let%expect_test "fixed test input" =
     let module Simulator = Cyclesim.With_interface (I) (O) in
-    let sim = Simulator.create create in
+    let sim = Simulator.create (create (Scope.create ~flatten_design:true ())) in
     let inputs : _ I.t = Cyclesim.inputs sim in
     let outputs : _ O.t = Cyclesim.outputs sim in
     let input_state =
@@ -59,8 +69,8 @@ module Test_simple_matrix_addition = struct
       |> List.map ~f:(Bits.of_int ~width:32)
       |> Bits.concat_lsb
     in
-    inputs.input := input_state;
-    inputs.unmixed_output := output_state;
+    inputs.round_input := input_state;
+    inputs.unmixed_round_output := output_state;
     cycle_and_print ~sim ~inputs ~outputs;
     [%expect
       {|

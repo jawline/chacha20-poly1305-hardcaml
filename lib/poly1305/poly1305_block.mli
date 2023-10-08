@@ -7,16 +7,16 @@ open! Signal
     division. *)
 module I : sig
   type 'a t =
-    { input : 'a [@bits 128]
+    { round_input : 'a [@bits 128]
     ; number_of_input_bytes_minus_one : 'a [@bits 4]
-    ; input_accumulation : 'a [@bits 130]
+    ; accumulator : 'a [@bits 130]
     ; r : 'a [@bits 128]
     }
   [@@deriving sexp_of, hardcaml]
 end
 
 module O : sig
-  type 'a t = { output : 'a [@bits 130] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { new_accumulator : 'a [@bits 130] } [@@deriving sexp_of, hardcaml]
 end
 
 val create : Scope.t -> Signal.t I.t -> Signal.t O.t

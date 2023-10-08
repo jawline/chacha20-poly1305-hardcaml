@@ -7,26 +7,36 @@ open! Signal
     https://datatracker.ietf.org/doc/html/rfc7539#section-2.3.1. *)
 
 module I = struct
-  type 'a t = { input : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { round_input : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
 module O = struct
-  type 'a t = { output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { round_output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
-let create ({ input; _ } : _ I.t) =
+let create _scope ({ round_input; _ } : _ I.t) =
   (* Chacha20's block function is 10 column rounds and 10 diagonal rounds back
      to back. As per the pseudocode in the IETF spec we merge the column and
      diagonal rounds into a single circuit
      and then apply it 10 times here. *)
-  { O.output =
+  { O.round_output =
       Sequence.range 0 10
-      |> Sequence.fold ~init:input ~f:(fun acc _i ->
+      |> Sequence.fold ~init:round_input ~f:(fun acc _i ->
         let next_round_output =
           Column_and_diagonal_round.create { Column_and_diagonal_round.I.input = acc }
         in
         next_round_output.output)
   }
+;;
+
+let hierarchical (scope : Scope.t) (input : Signal.t I.t) =
+  let module H = Hierarchy.In_scope (I) (O) in
+  H.hierarchical
+    ~scope
+    ~name:"chacha20_block_function_without_mixing"
+    ~instance:"chacha20_block_function_without_mixing"
+    create
+    input
 ;;
 
 module Test_informal = struct
@@ -38,13 +48,15 @@ module Test_informal = struct
     Cyclesim.cycle sim;
     Sequence.range 0 16
     |> Sequence.iter ~f:(fun word ->
-      let word_bits = Bits.select !(outputs.output) ((word * 32) + 31) (word * 32) in
+      let word_bits =
+        Bits.select !(outputs.round_output) ((word * 32) + 31) (word * 32)
+      in
       printf "%i: %x\n" word (Bits.to_int word_bits))
   ;;
 
   let%expect_test "fixed test input" =
     let module Simulator = Cyclesim.With_interface (I) (O) in
-    let sim = Simulator.create create in
+    let sim = Simulator.create (create (Scope.create ~flatten_design:true ())) in
     let inputs : _ I.t = Cyclesim.inputs sim in
     let outputs : _ O.t = Cyclesim.outputs sim in
     let oi v = Bits.of_int ~width:32 v in
@@ -69,7 +81,7 @@ module Test_informal = struct
       |> List.map ~f:oi
       |> Bits.concat_lsb
     in
-    inputs.input := input;
+    inputs.round_input := input;
     cycle_and_print ~sim ~outputs;
     [%expect
       {|
@@ -90,7 +102,7 @@ module Test_informal = struct
       13: e54005d2
       14: 29a14151
       15: 445b6001 |}];
-    inputs.input := !(outputs.output);
+    inputs.round_input := !(outputs.round_output);
     cycle_and_print ~sim ~outputs;
     [%expect
       {|
@@ -111,7 +123,7 @@ module Test_informal = struct
       13: 9318f41b
       14: 70913597
       15: 44d5d95b |}];
-    inputs.input := !(outputs.output);
+    inputs.round_input := !(outputs.round_output);
     cycle_and_print ~sim ~outputs;
     [%expect
       {|
@@ -143,19 +155,19 @@ module Test_from_ietf = struct
   let cycle_and_print ~sim ~(inputs : _ I.t) ~(outputs : _ O.t) =
     printf "Start of cycle\n";
     printf "Input: \n";
-    Util.print_state !(inputs.input);
+    Util.print_state !(inputs.round_input);
     Cyclesim.cycle sim;
     printf "Output: \n";
-    Util.print_state !(outputs.output)
+    Util.print_state !(outputs.round_output)
   ;;
 
   let%expect_test "fixed test input" =
     let module Simulator = Cyclesim.With_interface (I) (O) in
-    let sim = Simulator.create create in
+    let sim = Simulator.create (create (Scope.create ~flatten_design:true ())) in
     let inputs : _ I.t = Cyclesim.inputs sim in
     let outputs : _ O.t = Cyclesim.outputs sim in
     let input = Util.ietf_example_initial_state ~nonce:Util.block_test_nonce ~counter:1 in
-    inputs.input := input;
+    inputs.round_input := input;
     cycle_and_print ~sim ~inputs ~outputs;
     [%expect
       {|

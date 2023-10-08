@@ -20,14 +20,14 @@ module I : sig
     ; clear : 'a [@bits 1]
     ; start : 'a [@bits 1]
     ; key : 'a [@bits 256]
-    ; input : 'a [@bits 128]
+    ; round_input : 'a [@bits 128]
     ; number_of_input_bytes_minus_one : 'a [@bits 4]
     }
   [@@deriving sexp_of, hardcaml]
 end
 
 module O : sig
-  type 'a t = { output : 'a [@bits 128] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { tag : 'a [@bits 128] } [@@deriving sexp_of, hardcaml]
 end
 
 val create : Scope.t -> Signal.t I.t -> Signal.t O.t

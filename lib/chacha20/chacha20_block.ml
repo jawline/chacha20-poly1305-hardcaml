@@ -3,22 +3,30 @@ open! Hardcaml
 open! Signal
 
 module I = struct
-  type 'a t = { input : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { round_input : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
 module O = struct
-  type 'a t = { output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { round_output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
-let create ({ input } : _ I.t) =
-  let { Unmixed_block.O.output = unmixed_output } =
-    Unmixed_block.create { Unmixed_block.I.input }
+let create scope ({ round_input } : _ I.t) =
+  let { Chacha20_block_function_without_mixing.O.round_output = unmixed_round_output } =
+    Chacha20_block_function_without_mixing.hierarchical
+      scope
+      { Chacha20_block_function_without_mixing.I.round_input }
   in
-  let { Mix_input_and_output_state.O.output } =
-    Mix_input_and_output_state.create
-      { Mix_input_and_output_state.I.input; unmixed_output }
+  let { Chacha20_mixing_function.O.mixed_output } =
+    Chacha20_mixing_function.hierarchical
+      scope
+      { Chacha20_mixing_function.I.round_input; unmixed_round_output }
   in
-  { O.output }
+  { O.round_output = mixed_output }
+;;
+
+let hierarchical (scope : Scope.t) (input : Signal.t I.t) =
+  let module H = Hierarchy.In_scope (I) (O) in
+  H.hierarchical ~scope ~name:"chacha20_block" ~instance:"chacha20_block" create input
 ;;
 
 module Test_from_ietf = struct
@@ -29,18 +37,18 @@ module Test_from_ietf = struct
   let cycle_and_print ~sim ~(inputs : _ I.t) ~(outputs : _ O.t) =
     printf "Start of cycle\n";
     printf "Input: \n";
-    Util.print_state !(inputs.input);
+    Util.print_state !(inputs.round_input);
     Cyclesim.cycle sim;
     printf "Output: \n";
-    Util.bytestring_of_bits !(outputs.output) |> Util.hexdump
+    Util.bytestring_of_bits !(outputs.round_output) |> Util.hexdump
   ;;
 
   let%expect_test "fixed test input" =
     let module Simulator = Cyclesim.With_interface (I) (O) in
-    let sim = Simulator.create create in
+    let sim = Simulator.create (create (Scope.create ~flatten_design:true ())) in
     let inputs : _ I.t = Cyclesim.inputs sim in
     let outputs : _ O.t = Cyclesim.outputs sim in
-    inputs.input
+    inputs.round_input
     := Util.ietf_example_initial_state ~counter:1 ~nonce:Util.block_test_nonce;
     cycle_and_print ~sim ~inputs ~outputs;
     (* This test gives the same output as the example serialized block. *)
