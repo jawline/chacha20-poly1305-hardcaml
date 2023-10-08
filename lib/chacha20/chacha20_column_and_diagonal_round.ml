@@ -28,21 +28,33 @@ open! Signal
     word. *)
 
 module I = struct
-  type 'a t = { input : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { round_input : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
 module O = struct
-  type 'a t = { output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { round_output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
-let create ({ input; _ } : _ I.t) =
-  let { Column_round.O.output = column_output } =
-    Column_round.create { Column_round.I.input }
-  in
-  let { Diagonal_round.O.output } =
-    Diagonal_round.create { Diagonal_round.I.input = column_output }
-  in
-  { O.output }
+let column_round round_input =
+  let state' = Qround_chacha_state.do_qround ~a:0 ~b:4 ~c:8 ~d:12 round_input in
+  let state' = Qround_chacha_state.do_qround ~a:1 ~b:5 ~c:9 ~d:13 state' in
+  let state' = Qround_chacha_state.do_qround ~a:2 ~b:6 ~c:10 ~d:14 state' in
+  let state' = Qround_chacha_state.do_qround ~a:3 ~b:7 ~c:11 ~d:15 state' in
+  state'
+;;
+
+let diagonal_round round_input =
+  let state' = Qround_chacha_state.do_qround ~a:0 ~b:5 ~c:10 ~d:15 round_input in
+  let state' = Qround_chacha_state.do_qround ~a:1 ~b:6 ~c:11 ~d:12 state' in
+  let state' = Qround_chacha_state.do_qround ~a:2 ~b:7 ~c:8 ~d:13 state' in
+  let state' = Qround_chacha_state.do_qround ~a:3 ~b:4 ~c:9 ~d:14 state' in
+  state'
+;;
+
+let create ({ round_input; _ } : _ I.t) =
+  let column_output = column_round round_input in
+  let round_output = diagonal_round column_output in
+  { O.round_output }
 ;;
 
 module Test = struct
@@ -54,7 +66,9 @@ module Test = struct
     Cyclesim.cycle sim;
     Sequence.range 0 16
     |> Sequence.iter ~f:(fun word ->
-      let word_bits = Bits.select !(outputs.output) ((word * 32) + 31) (word * 32) in
+      let word_bits =
+        Bits.select !(outputs.round_output) ((word * 32) + 31) (word * 32)
+      in
       printf "%i: %x\n" word (Bits.to_int word_bits))
   ;;
 
@@ -85,7 +99,7 @@ module Test = struct
       |> List.map ~f:oi
       |> Bits.concat_lsb
     in
-    inputs.input := input_state;
+    inputs.round_input := input_state;
     cycle_and_print ~sim ~outputs;
     [%expect
       {|
@@ -106,7 +120,7 @@ module Test = struct
       13: cd88cc68
       14: eb19d17f
       15: 9931f9d0 |}];
-    inputs.input := !(outputs.output);
+    inputs.round_input := !(outputs.round_output);
     cycle_and_print ~sim ~outputs;
     [%expect
       {|
@@ -127,7 +141,7 @@ module Test = struct
       13: 675d3f10
       14: 46fc4d77
       15: caa42c38 |}];
-    inputs.input := !(outputs.output);
+    inputs.round_input := !(outputs.round_output);
     cycle_and_print ~sim ~outputs;
     [%expect
       {|

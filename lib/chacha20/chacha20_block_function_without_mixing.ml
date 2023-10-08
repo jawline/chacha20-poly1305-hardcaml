@@ -22,10 +22,11 @@ let create _scope ({ round_input; _ } : _ I.t) =
   { O.round_output =
       Sequence.range 0 10
       |> Sequence.fold ~init:round_input ~f:(fun acc _i ->
-        let next_round_output =
-          Column_and_diagonal_round.create { Column_and_diagonal_round.I.input = acc }
+        let { Chacha20_column_and_diagonal_round.O.round_output } =
+          Chacha20_column_and_diagonal_round.create
+            { Chacha20_column_and_diagonal_round.I.round_input = acc }
         in
-        next_round_output.output)
+        round_output)
   }
 ;;
 
