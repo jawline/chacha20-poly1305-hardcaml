@@ -1,6 +1,7 @@
 open! Core
 open! Hardcaml
 open! Signal
+open! Chacha20_qround.With_chacha20_state
 
 (** An implementation of a single column and a single diagonal round of the Chacha20 block function as described in
     https://datatracker.ietf.org/doc/html/rfc7539#section-2.3.
@@ -36,18 +37,18 @@ module O = struct
 end
 
 let column_round round_input =
-  let state' = Qround_chacha_state.do_qround ~a:0 ~b:4 ~c:8 ~d:12 round_input in
-  let state' = Qround_chacha_state.do_qround ~a:1 ~b:5 ~c:9 ~d:13 state' in
-  let state' = Qround_chacha_state.do_qround ~a:2 ~b:6 ~c:10 ~d:14 state' in
-  let state' = Qround_chacha_state.do_qround ~a:3 ~b:7 ~c:11 ~d:15 state' in
+  let state' = qround ~which_words:{ a = 0; b = 4; c = 8; d = 12 } round_input in
+  let state' = qround ~which_words:{ a = 1; b = 5; c = 9; d = 13 } state' in
+  let state' = qround ~which_words:{ a = 2; b = 6; c = 10; d = 14 } state' in
+  let state' = qround ~which_words:{ a = 3; b = 7; c = 11; d = 15 } state' in
   state'
 ;;
 
 let diagonal_round round_input =
-  let state' = Qround_chacha_state.do_qround ~a:0 ~b:5 ~c:10 ~d:15 round_input in
-  let state' = Qround_chacha_state.do_qround ~a:1 ~b:6 ~c:11 ~d:12 state' in
-  let state' = Qround_chacha_state.do_qround ~a:2 ~b:7 ~c:8 ~d:13 state' in
-  let state' = Qround_chacha_state.do_qround ~a:3 ~b:4 ~c:9 ~d:14 state' in
+  let state' = qround ~which_words:{ a = 0; b = 5; c = 10; d = 15 } round_input in
+  let state' = qround ~which_words:{ a = 1; b = 6; c = 11; d = 12 } state' in
+  let state' = qround ~which_words:{ a = 2; b = 7; c = 8; d = 13 } state' in
+  let state' = qround ~which_words:{ a = 3; b = 4; c = 9; d = 14 } state' in
   state'
 ;;
 
