@@ -36,7 +36,10 @@ let pad_input input number_of_input_bytes_minus_one =
   input |: pad_bit
 ;;
 
-let create ({ input; input_accumulation; number_of_input_bytes_minus_one; r } : _ I.t) =
+let create
+  _scope
+  ({ input; input_accumulation; number_of_input_bytes_minus_one; r } : _ I.t)
+  =
   (* Algorithm:
      1) pad input block with 1 bit
      2) accumulation = accumulation + padded input
@@ -49,6 +52,11 @@ let create ({ input; input_accumulation; number_of_input_bytes_minus_one; r } : 
     Int_division_by_constant.modulo ~dividend:accumulation_mul ~divisor:p
   in
   { O.output = uresize accumulation 130 }
+;;
+
+let hierarchical (scope : Scope.t) (input : Signal.t I.t) =
+  let module H = Hierarchy.In_scope (I) (O) in
+  H.hierarchical ~scope ~name:"poly1305_block" ~instance:"the_one_and_only" create input
 ;;
 
 module Functional_test = struct
@@ -76,7 +84,7 @@ module Functional_test = struct
 
   let%expect_test "IETF example test block one" =
     let module Simulator = Cyclesim.With_interface (I) (O) in
-    let sim = Simulator.create create in
+    let sim = Simulator.create (create (Scope.create ~flatten_design:true)) in
     let inputs : _ I.t = Cyclesim.inputs sim in
     let outputs : _ O.t = Cyclesim.outputs sim in
     inputs.input_accumulation := Bits.of_int ~width:130 0;

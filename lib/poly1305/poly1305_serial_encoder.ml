@@ -19,16 +19,20 @@ module O = struct
 end
 
 let create
+  scope
   ({ clock; clear; start; key; input; number_of_input_bytes_minus_one } : Signal.t I.t)
   =
   let open Always in
   let open Variable in
   let r_sync = Reg_spec.create ~clock ~clear () in
-  let { Clamp.O.output = r } = Clamp.create { Clamp.I.input = Signal.select key 127 0 } in
+  let { Clamp.O.output = r } =
+    Clamp.hierarchical scope { Clamp.I.input = Signal.select key 127 0 }
+  in
   let s = Signal.select key 255 128 in
   let accumulator = reg ~enable:vdd ~width:130 r_sync in
   let { Poly1305_block.O.output = next_accumulator; _ } =
-    Poly1305_block.create
+    Poly1305_block.hierarchical
+      scope
       { Poly1305_block.I.input
       ; input_accumulation = accumulator.value
       ; r
@@ -38,6 +42,16 @@ let create
   compile
     [ if_ (start ==:. 1) [ accumulator <--. 0 ] [ accumulator <-- next_accumulator ] ];
   { O.output = uresize accumulator.value 128 +: s }
+;;
+
+let hierarchical (scope : Scope.t) (input : Signal.t I.t) =
+  let module H = Hierarchy.In_scope (I) (O) in
+  H.hierarchical
+    ~scope
+    ~name:"poly1305_serial_encoder"
+    ~instance:"the_one_and_only"
+    create
+    input
 ;;
 
 let%test_module "Functional test" =
@@ -58,7 +72,7 @@ let%test_module "Functional test" =
 
     let%expect_test "fixed test input" =
       let module Simulator = Cyclesim.With_interface (I) (O) in
-      let sim = Simulator.create create in
+      let sim = Simulator.create (create (Scope.create ~flatten_design:true ())) in
       let inputs : _ I.t = Cyclesim.inputs sim in
       let outputs : _ O.t = Cyclesim.outputs sim in
       inputs.start := Bits.of_int ~width:1 1;

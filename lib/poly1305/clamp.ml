@@ -10,7 +10,7 @@ module O = struct
   type 'a t = { output : 'a [@bits 128] } [@@deriving sexp_of, hardcaml]
 end
 
-let create ({ input } : _ I.t) =
+let create _scope ({ input } : _ I.t) =
   let byte index = Util.select_byte_range ~from:index ~to_:(index + 1) input in
   let l15 = Signal.of_int ~width:8 15 in
   let l252 = Signal.of_int ~width:8 252 in
@@ -37,6 +37,11 @@ let create ({ input } : _ I.t) =
   { O.output }
 ;;
 
+let hierarchical (scope : Scope.t) (input : Signal.t I.t) =
+  let module H = Hierarchy.In_scope (I) (O) in
+  H.hierarchical ~scope ~name:"poly1305_clamp" ~instance:"the_one_and_only" create input
+;;
+
 module Functional_test = struct
   let cycle_and_print ~sim ~(inputs : _ I.t) ~(outputs : _ O.t) =
     Cyclesim.cycle sim;
@@ -48,7 +53,7 @@ module Functional_test = struct
 
   let%expect_test "fixed test input" =
     let module Simulator = Cyclesim.With_interface (I) (O) in
-    let sim = Simulator.create create in
+    let sim = Simulator.create (create (Scope.create ~flatten_design:true ())) in
     let inputs : _ I.t = Cyclesim.inputs sim in
     let outputs : _ O.t = Cyclesim.outputs sim in
     inputs.input := Util.example_clamp_input;
