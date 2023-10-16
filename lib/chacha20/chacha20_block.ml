@@ -13,20 +13,22 @@ end
 let create scope ({ round_input } : _ I.t) =
   let { Chacha20_block_function_without_mixing.O.round_output = unmixed_round_output } =
     Chacha20_block_function_without_mixing.hierarchical
+      ~instance:(Scope.name scope "0")
       scope
       { Chacha20_block_function_without_mixing.I.round_input }
   in
   let { Chacha20_mixing_function.O.mixed_output } =
     Chacha20_mixing_function.hierarchical
+      ~instance:(Scope.name scope "0")
       scope
       { Chacha20_mixing_function.I.round_input; unmixed_round_output }
   in
   { O.round_output = mixed_output }
 ;;
 
-let hierarchical (scope : Scope.t) (input : Signal.t I.t) =
+let hierarchical ~instance (scope : Scope.t) (input : Signal.t I.t) =
   let module H = Hierarchy.In_scope (I) (O) in
-  H.hierarchical ~scope ~name:"chacha20_block" ~instance:"chacha20_block" create input
+  H.hierarchical ~scope ~name:"chacha20_block" ~instance create input
 ;;
 
 module Test_from_ietf = struct

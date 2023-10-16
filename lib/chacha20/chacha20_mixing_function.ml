@@ -30,14 +30,9 @@ let create _scope ({ round_input; unmixed_round_output } : _ I.t) =
   }
 ;;
 
-let hierarchical (scope : Scope.t) (input : Signal.t I.t) =
+let hierarchical ~instance (scope : Scope.t) (input : Signal.t I.t) =
   let module H = Hierarchy.In_scope (I) (O) in
-  H.hierarchical
-    ~scope
-    ~name:"chacha20_mixing_function"
-    ~instance:"chacha20_mixing_function"
-    create
-    input
+  H.hierarchical ~scope ~name:"chacha20_mixing_function" ~instance create input
 ;;
 
 module Test_simple_matrix_addition = struct

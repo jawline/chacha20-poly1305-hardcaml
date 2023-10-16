@@ -6,6 +6,7 @@ module I = struct
   type 'a t =
     { clock : 'a [@bits 1]
     ; clear : 'a [@bits 1]
+    ; reset : 'a [@bits 1]
     ; set_state : 'a [@bits 1]
     ; round_input : 'a [@bits 512]
     }
@@ -16,16 +17,17 @@ module O = struct
   type 'a t = { round_output : 'a [@bits 512] } [@@deriving sexp_of, hardcaml]
 end
 
-let create scope ({ clock; clear; set_state; round_input } : Signal.t I.t) =
+let create scope ({ clock; clear; reset; set_state; round_input } : Signal.t I.t) =
   let open Always in
   let open Variable in
-  let r_sync = Reg_spec.create ~clock ~clear () in
+  let r_sync = Reg_spec.create ~clock ~clear ~reset () in
   let current_state = reg ~enable:vdd ~width:512 r_sync in
   let state_counter =
     Util.select_byte_range current_state.value ~from:(4 * 12) ~to_:(4 * 13)
   in
   let { Chacha20_block.O.round_output = block_output } =
     Chacha20_block.hierarchical
+      ~instance:(Scope.name scope "0")
       scope
       { Chacha20_block.I.round_input = current_state.value }
   in
@@ -43,14 +45,9 @@ let create scope ({ clock; clear; set_state; round_input } : Signal.t I.t) =
   { O.round_output = round_input ^: block_output }
 ;;
 
-let hierarchical (scope : Scope.t) (input : Signal.t I.t) =
+let hierarchical ~instance (scope : Scope.t) (input : Signal.t I.t) =
   let module H = Hierarchy.In_scope (I) (O) in
-  H.hierarchical
-    ~scope
-    ~name:"chacha20_serial_encoder"
-    ~instance:"the_one_and_only"
-    create
-    input
+  H.hierarchical ~scope ~name:"chacha20_serial_encoder" ~instance create input
 ;;
 
 let%test_module "Functional test" =

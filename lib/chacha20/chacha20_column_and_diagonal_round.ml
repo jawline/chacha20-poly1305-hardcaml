@@ -58,14 +58,9 @@ let create _scope ({ round_input; _ } : _ I.t) =
   { O.round_output }
 ;;
 
-let hierarchical (scope : Scope.t) (input : Signal.t I.t) =
+let hierarchical ~instance (scope : Scope.t) (input : Signal.t I.t) =
   let module H = Hierarchy.In_scope (I) (O) in
-  H.hierarchical
-    ~scope
-    ~name:"chacha20_serial_encoder"
-    ~instance:"the_one_and_only"
-    create
-    input
+  H.hierarchical ~scope ~name:"chacha20_column_and_diagonal_round" ~instance create input
 ;;
 
 module Test = struct

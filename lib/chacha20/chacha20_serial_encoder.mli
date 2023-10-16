@@ -6,6 +6,7 @@ module I : sig
   type 'a t =
     { clock : 'a [@bits 1]
     ; clear : 'a [@bits 1]
+    ; reset : 'a [@bits 1]
     ; set_state : 'a [@bits 1]
     ; round_input : 'a [@bits 512]
     }
@@ -17,4 +18,4 @@ module O : sig
 end
 
 val create : Scope.t -> Signal.t I.t -> Signal.t O.t
-val hierarchical : Scope.t -> Signal.t I.t -> Signal.t O.t
+val hierarchical : instance:string -> Scope.t -> Signal.t I.t -> Signal.t O.t

@@ -21,9 +21,10 @@ let create scope ({ round_input; _ } : _ I.t) =
      and then apply it 10 times here. *)
   { O.round_output =
       Sequence.range 0 10
-      |> Sequence.fold ~init:round_input ~f:(fun acc _i ->
+      |> Sequence.fold ~init:round_input ~f:(fun acc i ->
         let { Chacha20_column_and_diagonal_round.O.round_output } =
           Chacha20_column_and_diagonal_round.hierarchical
+            ~instance:(Scope.name scope (Int.to_string i))
             scope
             { Chacha20_column_and_diagonal_round.I.round_input = acc }
         in
@@ -31,12 +32,12 @@ let create scope ({ round_input; _ } : _ I.t) =
   }
 ;;
 
-let hierarchical (scope : Scope.t) (input : Signal.t I.t) =
+let hierarchical ~instance (scope : Scope.t) (input : Signal.t I.t) =
   let module H = Hierarchy.In_scope (I) (O) in
   H.hierarchical
     ~scope
     ~name:"chacha20_block_function_without_mixing"
-    ~instance:"chacha20_block_function_without_mixing"
+    ~instance
     create
     input
 ;;
