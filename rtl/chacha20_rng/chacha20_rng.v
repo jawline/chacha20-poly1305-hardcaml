@@ -42,7 +42,7 @@ module chacha20_rng (
     assign _5 = clear;
     assign _7 = clock;
     chacha20_serial_encoder
-        _0
+        serial_encoder
         ( .clock(_7), .clear(_5), .reset(_3), .set_state(_16), .round_input(_17), .round_output(_19[511:0]) );
     assign _8 = _19;
 

@@ -52,9 +52,9 @@ let create
   { O.new_accumulator = uresize accumulator 130 }
 ;;
 
-let hierarchical (scope : Scope.t) (input : Signal.t I.t) =
+let hierarchical ~instance (scope : Scope.t) (input : Signal.t I.t) =
   let module H = Hierarchy.In_scope (I) (O) in
-  H.hierarchical ~scope ~name:"poly1305_block" ~instance:"poly1305_block" create input
+  H.hierarchical ~scope ~name:"poly1305_block" ~instance create input
 ;;
 
 module Functional_test = struct

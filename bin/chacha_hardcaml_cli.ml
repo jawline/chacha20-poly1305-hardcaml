@@ -29,13 +29,13 @@ let () =
     ~directory:"./rtl/poly1305/"
     (module Poly1305_serial_encoder.I)
     (module Poly1305_serial_encoder.O)
-    Poly1305_serial_encoder.hierarchical;
+    (Poly1305_serial_encoder.hierarchical ~instance:"0");
   emit
     ~name:"chacha20_rng_top"
     ~directory:"./rtl/chacha20_rng/"
     (module Chacha20_rng.I)
     (module Chacha20_rng.O)
-    Chacha20_rng.hierarchical;
+    (Chacha20_rng.hierarchical ~instance:"0");
   emit
     ~name:"chacha20_serial_encoder_top"
     ~directory:"./rtl/chacha20_serial_encoder/"

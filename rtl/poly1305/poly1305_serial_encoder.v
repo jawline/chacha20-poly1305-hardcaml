@@ -54,7 +54,7 @@ module poly1305_serial_encoder (
     assign _9 = number_of_input_bytes_minus_one;
     assign _11 = round_input;
     poly1305_block
-        poly1305_block
+        block
         ( .round_input(_11), .number_of_input_bytes_minus_one(_9), .accumulator(_23), .r(_7), .new_accumulator(_25[129:0]) );
     assign _12 = _25;
     assign _14 = start;

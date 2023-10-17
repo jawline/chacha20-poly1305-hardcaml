@@ -35,6 +35,7 @@ let create
   let accumulator = reg ~enable:vdd ~width:130 r_sync in
   let { Poly1305_block.O.new_accumulator } =
     Poly1305_block.hierarchical
+      ~instance:(Scope.name scope "block")
       scope
       { Poly1305_block.I.round_input
       ; accumulator = accumulator.value
@@ -47,14 +48,9 @@ let create
   { O.tag = uresize accumulator.value 128 +: s }
 ;;
 
-let hierarchical (scope : Scope.t) (input : Signal.t I.t) =
+let hierarchical ~instance (scope : Scope.t) (input : Signal.t I.t) =
   let module H = Hierarchy.In_scope (I) (O) in
-  H.hierarchical
-    ~scope
-    ~name:"poly1305_serial_encoder"
-    ~instance:"poly1305_serial_encoder"
-    create
-    input
+  H.hierarchical ~scope ~name:"poly1305_serial_encoder" ~instance create input
 ;;
 
 let%test_module "Functional test" =
