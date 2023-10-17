@@ -21,5 +21,11 @@ module O : sig
   [@@deriving sexp_of, hardcaml]
 end
 
-val create : Scope.t -> Signal.t I.t -> Signal.t O.t
-val hierarchical : instance:string -> Scope.t -> Signal.t I.t -> Signal.t O.t
+val create : update_every_n_cycles:int -> Scope.t -> Signal.t I.t -> Signal.t O.t
+
+val hierarchical
+  :  update_every_n_cycles:int
+  -> instance:string
+  -> Scope.t
+  -> Signal.t I.t
+  -> Signal.t O.t
