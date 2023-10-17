@@ -2,9 +2,6 @@ open! Core
 open! Hardcaml
 open! Signal
 
-(* This module instantiates a serial encoder with a fixed seed
-   and no input to act as a PRNG for testing. *)
-
 module I = struct
   type 'a t =
     { clock : 'a [@bits 1]
@@ -42,3 +39,5 @@ let hierarchical ~instance (scope : Scope.t) (input : Signal.t I.t) =
   let module H = Hierarchy.In_scope (I) (O) in
   H.hierarchical ~scope ~name:"chacha20_rng" ~instance create input
 ;;
+
+(* TODO: Add some sanity tests *)

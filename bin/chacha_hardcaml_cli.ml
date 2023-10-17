@@ -41,5 +41,11 @@ let () =
     ~directory:"./rtl/chacha20_serial_encoder/"
     (module Chacha20_serial_encoder.I)
     (module Chacha20_serial_encoder.O)
-    (Chacha20_serial_encoder.hierarchical ~instance:"0")
+    (Chacha20_serial_encoder.hierarchical ~instance:"0");
+  emit
+    ~name:"alinx_led_rng_top"
+    ~directory:"./rtl/alinx_led_rng/"
+    (module Alinx_led_rng.I)
+    (module Alinx_led_rng.O)
+    (Alinx_led_rng.hierarchical ~instance:"0")
 ;;
