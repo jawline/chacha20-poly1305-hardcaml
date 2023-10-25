@@ -34,7 +34,6 @@ let create scope ({ clock; clear; start; round_input } : _ I.t) =
   let r_sync = Reg_spec.create ~clock ~clear () in
   let state = Always.State_machine.create (module States) ~enable:vdd r_sync in
   let finished = Always.Variable.wire ~default:gnd in
-  let origin_input = reg ~enable:vdd ~width:512 r_sync in
   let output = reg ~enable:vdd ~width:512 r_sync in
   let start_block = wire ~default:gnd in
   let { Chacha20_pipelined_block_function_without_mixing.O.round_output =
@@ -55,17 +54,13 @@ let create scope ({ clock; clear; start; round_input } : _ I.t) =
     Chacha20_mixing_function.hierarchical
       ~instance:(Scope.name scope "mixing")
       scope
-      { Chacha20_mixing_function.I.round_input = origin_input.value
-      ; unmixed_round_output
-      }
+      { Chacha20_mixing_function.I.round_input; unmixed_round_output }
   in
   compile
     [ state.switch
         [ ( Waiting
           , [ finished <--. 1
-            ; when_
-                (start ==:. 1)
-                [ start_block <--. 1; origin_input <-- round_input; state.set_next Block ]
+            ; when_ (start ==:. 1) [ start_block <--. 1; state.set_next Block ]
             ] )
         ; Block, [ when_ block_finished [ state.set_next Mixing ] ]
         ; Mixing, [ output <-- mixed_output; state.set_next Waiting ]
@@ -119,13 +114,35 @@ module Test_from_ietf = struct
     (* This test gives the same output as the example serialized block. *)
     [%expect
       {|
-      Start of cycle
       Input:
        00: 61707865 01: 3320646e 02: 79622d32 03: 6b206574
        04: 03020100 05: 07060504 06: 0b0a0908 07: 0f0e0d0c
        08: 13121110 09: 17161514 10: 1b1a1918 11: 1f1e1d1c
        12: 00000001 13: 09000000 14: 4a000000 15: 00000000
-      Output:
+      Output (Before setting start): Finished: 1
+       00: 00000000 01: 00000000 02: 00000000 03: 00000000
+       04: 00000000 05: 00000000 06: 00000000 07: 00000000
+       08: 00000000 09: 00000000 10: 00000000 11: 00000000
+       12: 00000000 13: 00000000 14: 00000000 15: 00000000
+      Output (First cycle): Finished: 0
+      001: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................
+      002: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................
+      003: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................
+      004: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................
+      005:                                                 |
+      Output (Tenth cycle): Finished: 0
+      001: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................
+      002: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................
+      003: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................
+      004: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................
+      005:                                                 |
+      Output (Eleventh cycle): Finished: 0
+      001: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................
+      002: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................
+      003: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................
+      004: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................
+      005:                                                 |
+      Output (Twelth cycle): Finished: 1
       001: 10 f1 e7 e4 d1 3b 59 15 50 0f dd 1f a3 20 71 c4 | .....;Y.P.... q.
       002: c7 d1 f4 c7 33 c0 68 03 04 22 aa 9a c3 d4 6c 4e | ....3.h.."....lN
       003: d2 82 64 46 07 9f aa 09 14 c2 d7 05 d9 8b 02 a2 | ..dF............

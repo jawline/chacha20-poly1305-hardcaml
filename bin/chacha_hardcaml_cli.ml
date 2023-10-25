@@ -31,12 +31,6 @@ let () =
     (module Poly1305_serial_encoder.O)
     (Poly1305_serial_encoder.hierarchical ~instance:"0");
   emit
-    ~name:"chacha20_rng_top"
-    ~directory:"./rtl/chacha20_rng/"
-    (module Chacha20_rng.I)
-    (module Chacha20_rng.O)
-    (Chacha20_rng.hierarchical ~instance:"0");
-  emit
     ~name:"chacha20_serial_encoder_top"
     ~directory:"./rtl/chacha20_serial_encoder/"
     (module Chacha20_serial_encoder.I)
@@ -47,5 +41,5 @@ let () =
     ~directory:"./rtl/alinx_led_rng/"
     (module Alinx_led_rng.I)
     (module Alinx_led_rng.O)
-    (Alinx_led_rng.hierarchical ~update_every_n_cycles:(200_000_000) ~instance:"0")
+    (Alinx_led_rng.hierarchical ~update_every_n_cycles:5 ~instance:"0")
 ;;
