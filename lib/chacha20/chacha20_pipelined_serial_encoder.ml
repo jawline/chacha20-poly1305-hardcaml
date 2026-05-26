@@ -87,7 +87,7 @@ let create scope ({ clock; clear; set_state; start_round; round_input } : Signal
 
 let hierarchical ~instance (scope : Scope.t) (input : Signal.t I.t) =
   let module H = Hierarchy.In_scope (I) (O) in
-  H.hierarchical ~scope ~name:"chacha20_serial_encoder" ~instance create input
+  H.hierarchical ~scope ~name:"chacha20_pipelined_serial_encoder" ~instance create input
 ;;
 
 let%test_module "IETF sunblock test" =

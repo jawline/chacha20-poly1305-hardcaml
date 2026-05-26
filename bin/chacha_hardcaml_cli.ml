@@ -41,5 +41,5 @@ let () =
     ~directory:"./rtl/alinx_led_rng/"
     (module Alinx_led_rng.I)
     (module Alinx_led_rng.O)
-    (Alinx_led_rng.hierarchical ~update_every_n_cycles:5 ~instance:"0")
+    (Alinx_led_rng.hierarchical ~update_every_n_cycles:5_000_000 ~instance:"0")
 ;;

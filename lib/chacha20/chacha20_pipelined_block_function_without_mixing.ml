@@ -42,7 +42,10 @@ let create scope ({ clock; clear; start; round_input = first_round_input; _ } : 
   (* Chacha20's block function is 10 column rounds and 10 diagonal rounds back
      to back. As per the pseudocode in the IETF spec we merge the column and
      diagonal rounds into a single circuit
-     and then apply it 10 times here. *)
+     and then apply it 10 times here.
+
+     We do a column and diagonal round once per cycle. This could be switched
+     to a 20 cycle approach if timings are an issue. *)
   compile
     [ when_
         (start ==:. 1)
@@ -64,7 +67,7 @@ let hierarchical ~instance (scope : Scope.t) (input : Signal.t I.t) =
   let module H = Hierarchy.In_scope (I) (O) in
   H.hierarchical
     ~scope
-    ~name:"chacha20_block_function_without_mixing"
+    ~name:"chacha20_pipelined_block_function_without_mixing"
     ~instance
     create
     input

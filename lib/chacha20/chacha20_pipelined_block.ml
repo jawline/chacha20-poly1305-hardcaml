@@ -71,7 +71,7 @@ let create scope ({ clock; clear; start; round_input } : _ I.t) =
 
 let hierarchical ~instance (scope : Scope.t) (input : Signal.t I.t) =
   let module H = Hierarchy.In_scope (I) (O) in
-  H.hierarchical ~scope ~name:"chacha20_block" ~instance create input
+  H.hierarchical ~scope ~name:"chacha20_pipelined_block" ~instance create input
 ;;
 
 module Test_from_ietf = struct
@@ -92,14 +92,14 @@ module Test_from_ietf = struct
     inputs.start := Bits.of_int ~width:1 0;
     printf "Output (First cycle): Finished: %i\n" (Bits.to_int !(outputs.finished));
     Util.bytestring_of_bits !(outputs.round_output) |> Util.hexdump;
-    Sequence.range 0 9 |> Sequence.iter ~f:(fun _ -> Cyclesim.cycle sim);
+    Sequence.range 0 10 |> Sequence.iter ~f:(fun _ -> Cyclesim.cycle sim);
     printf "Output (Tenth cycle): Finished: %i\n" (Bits.to_int !(outputs.finished));
     Util.bytestring_of_bits !(outputs.round_output) |> Util.hexdump;
     Cyclesim.cycle sim;
-    printf "Output (Eleventh cycle): Finished: %i\n" (Bits.to_int !(outputs.finished));
+    printf "Output (Twelth cycle): Finished: %i\n" (Bits.to_int !(outputs.finished));
     Util.bytestring_of_bits !(outputs.round_output) |> Util.hexdump;
     Cyclesim.cycle sim;
-    printf "Output (Twelth cycle): Finished: %i\n" (Bits.to_int !(outputs.finished));
+    printf "Output (Thirteenth cycle): Finished: %i\n" (Bits.to_int !(outputs.finished));
     Util.bytestring_of_bits !(outputs.round_output) |> Util.hexdump
   ;;
 
